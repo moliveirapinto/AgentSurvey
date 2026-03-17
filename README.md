@@ -4,6 +4,23 @@ A lightweight, no-code survey solution for Dynamics 365 Contact Center that auto
 
 ![Survey Manager — Full Dashboard](img/full.jpeg)
 
+## Table of Contents
+
+- [Solution Components](#solution-components)
+  - [Custom Table: Agent Survey Form](#custom-table-agent-survey-form)
+  - [How Metadata Works](#how-metadata-works)
+  - [Web Resources](#web-resources)
+- [Features](#features)
+- [Survey Popup](#survey-popup)
+- [Analytics Dashboard](#analytics-dashboard)
+- [Setup Guide](#setup-guide)
+  - [Prerequisites](#prerequisites)
+  - [Step 1: Import the Solution](#step-1-import-the-solution)
+  - [Step 2: Register the Script on the Active Conversation Form](#step-2-register-the-script-on-the-active-conversation-form)
+  - [Step 3: Open the Survey Manager](#step-3-open-the-survey-manager)
+  - [Step 4: Configure Your Survey](#step-4-configure-your-survey)
+- [Author](#author)
+
 ## Solution Components
 
 The solution is composed of the following Dataverse components:
@@ -84,37 +101,24 @@ The built-in analytics dashboard provides real-time insights into survey respons
 
 - A Dynamics 365 Customer Service environment with the Contact Center (Omnichannel) module
 - System Administrator or System Customizer security role
-- An unmanaged solution in your environment to hold the components
 
-### Step 1: Create the Custom Entity
+### Step 1: Import the Solution
 
-1. Open [Power Apps](https://make.powerapps.com) and select your environment
-2. Go to **Tables** (under **Dataverse**) and click **+ New table**
-3. Create a table with display name **Agent Survey Form** (logical name: `crd9b_agentsurveyform`)
-   > **Note:** The `crd9b_` prefix depends on your publisher. If your publisher uses a different prefix, update the `SURVEY_ENTITY` / `SURVEY_ENTITY_NAME` variable in all three files to match
-4. Add the following columns to the table:
-   - **Conversation ID** — Type: **Lookup** → Conversation (`msdyn_ocliveworkitem`)
-   - **New Conversation ID** — Type: **Single line of text** (stores the conversation GUID as text)
-   - **Recording URL** — Type: **Single line of text** (optional, for call recording links)
-5. Save and publish the table
+1. Download the latest solution zip from the [Releases](https://github.com/moliveirapinto/AgentSurvey/releases/latest) page
+2. Open [Power Apps](https://make.powerapps.com) and select your target environment
+3. Go to **Solutions** in the left navigation
+4. Click **Import solution** (top toolbar)
+5. Click **Browse**, select the downloaded `AgentSurvey_1_0_0_5.zip` file, and click **Next**
+6. Review the solution details and click **Import**
+7. Wait for the import to complete — all components (table, web resources, and process) will be created automatically
 
-### Step 2: Import the Web Resources
+> **Note:** The solution uses the publisher prefix `crd9b_`. If you need a different prefix, you'll need to update the `SURVEY_ENTITY` / `SURVEY_ENTITY_NAME` variable in the three web resource files before importing.
 
-1. Open [Power Apps](https://make.powerapps.com) and select your environment
-2. Go to **Solutions** and open your unmanaged solution
-3. Click **+ Add existing** → **More** → **Web resource** if they already exist, or create new ones:
-   - Click **+ New** → **More** → **Web resource**
-   - For each file, set:
-     - **AgentSurveyWrapup.js** — Name: `crd9b_/scripts/AgentSurveyWrapup.js`, Type: `Script (JScript)`
-     - **new_AgentSurveyForm.htm** — Name: `new_AgentSurveyForm`, Type: `Webpage (HTML)`
-     - **new_SurveyQuestionManager.htm** — Name: `new_SurveyQuestionManager`, Type: `Webpage (HTML)`
-   - Upload each file and click **Save**, then **Publish**
-
-### Step 3: Register the Script on the Active Conversation Form
+### Step 2: Register the Script on the Active Conversation Form
 
 This step makes the survey popup appear automatically when agents wrap up conversations.
 
-1. Open [Power Apps](https://make.powerapps.com) → **Solutions** → open your solution
+1. Open [Power Apps](https://make.powerapps.com) → **Solutions** → open the **Agent Survey** solution
 2. Click **+ Add existing** → **Entity** → search for **Conversation** (`msdyn_ocliveworkitem`) and add it
 3. Open the **Conversation** entity → **Forms**
 4. Open the **Active Conversation** form (or the form used by your agents)
@@ -129,14 +133,14 @@ This step makes the survey popup appear automatically when agents wrap up conver
    - Click **Done**
 7. Click **Save and Publish**
 
-### Step 4: Open the Survey Manager
+### Step 3: Open the Survey Manager
 
 The Survey Manager is where you configure questions, set the theme, and view analytics.
 
 1. Open the **Customer Service Admin Center** app in your D365 environment:
    - Navigate to `https://[your-org].crm.dynamics.com/main.aspx`
    - From the app switcher (top-left), select **Customer Service Admin Center**
-2. You can open the Survey Manager web resource directly via URL:
+2. Open the Survey Manager web resource directly via URL:
    ```
    https://[your-org].crm.dynamics.com/WebResources/new_SurveyQuestionManager
    ```
@@ -150,7 +154,7 @@ The Survey Manager is where you configure questions, set the theme, and view ana
      - Title: `Survey Manager`
    - Save and publish the app
 
-### Step 5: Configure Your Survey
+### Step 4: Configure Your Survey
 
 Once the Survey Manager is open:
 
