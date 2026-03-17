@@ -137,22 +137,27 @@ This step makes the survey popup appear automatically when agents wrap up conver
 
 The Survey Manager is where you configure questions, set the theme, and view analytics.
 
-1. Open the **Customer Service Admin Center** app in your D365 environment:
-   - Navigate to `https://[your-org].crm.dynamics.com/main.aspx`
-   - From the app switcher (top-left), select **Customer Service Admin Center**
-2. Open the Survey Manager web resource directly via URL:
-   ```
-   https://[your-org].crm.dynamics.com/WebResources/new_SurveyQuestionManager
-   ```
-   Replace `[your-org]` with your organization's subdomain (e.g., `mycompany`)
-3. Alternatively, add it as a **Sitemap entry** for easy access:
-   - In your solution, go to **Model-driven Apps** → open your app (e.g., Customer Service Admin Center or Customer Service Workspace)
-   - Open the **Site Map** editor
-   - Add a new **Sub Area** with:
-     - Type: **Web Resource**
-     - Web Resource: `new_SurveyQuestionManager`
-     - Title: `Survey Manager`
-   - Save and publish the app
+> 🌟 **Recommended** — Add the Survey Manager as a Sitemap entry so it's always accessible from the app navigation. This is the best approach for ongoing use.
+
+**Option A: Add as a Sitemap Entry** ⭐ *Recommended*
+
+1. Open [Power Apps](https://make.powerapps.com) → **Solutions** → open the **Agent Survey** solution
+2. Go to **Model-driven Apps** → open your app (e.g., **Customer Service Workspace** or **Customer Service Admin Center**)
+3. Open the **Site Map** editor (or **Navigation** in the modern designer)
+4. Add a new **Sub Area** with:
+   - Type: **Web Resource**
+   - Web Resource: `new_SurveyQuestionManager`
+   - Title: `Survey Manager`
+5. Save and publish the app
+6. Agents and admins will now see **Survey Manager** in the app's left navigation — no URL needed
+
+**Option B: Open via Direct URL**
+
+If you prefer not to modify the sitemap, you can access the Survey Manager directly:
+```
+https://[your-org].crm.dynamics.com/WebResources/new_SurveyQuestionManager
+```
+Replace `[your-org]` with your organization's subdomain (e.g., `mycompany`).
 
 ### Step 4: Configure Your Survey
 
