@@ -72,6 +72,12 @@ When an agent's conversation enters wrap-up status, the survey popup automatical
 
 ![Survey Popup](img/popup.png)
 
+## Analytics Dashboard
+
+The built-in analytics dashboard provides real-time insights into survey responses, including KPIs, agent breakdown charts, question-level donut charts, and a filterable response table:
+
+![Analytics Dashboard](img/dashboard.jpeg)
+
 ## Setup Guide
 
 ### Prerequisites
