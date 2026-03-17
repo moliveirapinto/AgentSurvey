@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Survey</title>
+<style>
+  :root {
+    --primary: #5B5FC7;
+    --primary-hover: #4B4FB7;
+    --primary-text: #fff;
+    --bg: #fafafa;
+    --card: #ffffff;
+    --text: #242424;
+    --text-secondary: #616161;
+    --border: #e0e0e0;
+    --toggle-off: #c4c4c4;
+    --success: #0f7b0f;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    background: var(--primary);
+    color: var(--primary-text);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header svg { flex-shrink: 0; }
+
+  .header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+
+  .header p {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+
+  .content {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+  }
+
+  .question {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+
+  .question:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow);
+  }
+
+  .question.text-question {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .question-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--primary-text);
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-right: 14px;
+  }
+
+  .question-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .text-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-top: 10px;
+    box-sizing: border-box;
+  }
+
+  textarea.text-input {
+    resize: none;
+    overflow: hidden;
+  }
+
+  .text-input:focus { border-color: var(--primary); }
+
+  /* Toggle switch */
+  .toggle { position: relative; flex-shrink: 0; margin-left: 16px; }
+
+  .toggle input { display: none; }
+
+  .toggle label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle .slider {
+    width: 44px;
+    height: 24px;
+    background: var(--toggle-off);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s;
+  }
+
+  .toggle .slider::after {
+    content: '';
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .toggle input:checked + label .slider {
+    background: var(--primary);
+  }
+
+  .toggle input:checked + label .slider::after {
+    transform: translateX(20px);
+  }
+
+  .toggle .toggle-label {
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 28px;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+  }
+
+  .toggle input:checked + label .toggle-label {
+    color: var(--primary);
+  }
+
+  .footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: var(--card);
+  }
+
+  .btn {
+    padding: 9px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--primary);
+    color: var(--primary-text);
+  }
+
+  .btn-primary:hover { background: var(--primary-hover); }
+
+  .btn-primary:disabled {
+    background: #bbb;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Loading state */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-secondary);
+  }
+
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-bottom: 12px;
+  }
+
+  .error-msg {
+    padding: 20px 24px;
+    color: #d13438;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  /* Success state */
+  .success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .success-overlay.show { display: flex; }
+
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--primary-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .success-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .success-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .btn-close-dialog {
+    margin-top: 20px;
+    padding: 8px 28px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-close-dialog:hover {
+    background: var(--border);
+  }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .required-mark {
+    color: #d13438;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+
+  .validation-error {
+    border-color: #d13438 !important;
+    box-shadow: 0 0 0 2px rgba(209,52,56,0.15) !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Post-Call Survey</h1>
+    <p>Please complete before closing the conversation</p>
+  </div>
+</div>
+
+<div class="content" id="questionsContainer">
+  <div class="loading" id="loadingIndicator">
+    <div class="loading-spinner"></div>
+    <span>Loading questions...</span>
+  </div>
+</div>
+
+<div class="footer">
+  <button class="btn btn-primary" id="btnSubmit" onclick="submitSurvey()" disabled>Submit Survey</button>
+</div>
+
+<div class="success-overlay" id="successOverlay">
+  <div class="success-icon">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="currentColor"/>
+    </svg>
+  </div>
+  <div class="success-text">Survey Submitted</div>
+  <div class="success-sub">Thank you for your feedback</div>
+  <button class="btn-close-dialog" onclick="closeDialog()">Close</button>
+</div>
+
+<script>
+  var SURVEY_ENTITY_NAME = "crd9b_agentsurveyform";
+  var ENTITY_DEF_PATH = "EntityDefinitions(LogicalName='" + SURVEY_ENTITY_NAME + "')";
+  var EXCLUDED_FIELDS = [
+    "crd9b_agentsurveyformid", "crd9b_conversationid", "crd9b_conversationidname",
+    "crd9b_hardcodetext", "crd9b_newconversationid", "crd9b_recordingurl", "crd9b_surveyid"
+  ];
+  var loadedQuestions = [];
+
+  function getConversationId() {
+    var params = new URLSearchParams(window.location.search);
+    return params.get('data') || '';
+  }
+
+  function getXrm() {
+    return window.parent && window.parent.Xrm ? window.parent.Xrm : null;
+  }
+
+  function getBaseUrl() {
+    var Xrm = getXrm();
+    if (Xrm) return Xrm.Utility.getGlobalContext().getClientUrl();
+    return window.location.origin;
+  }
+
+  function loadThemeColor() {
+    var baseUrl = getBaseUrl();
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", baseUrl + "/api/data/v9.2/" + ENTITY_DEF_PATH + "?$select=Description", false);
+    xhr.setRequestHeader("OData-MaxVersion", "4.0");
+    xhr.setRequestHeader("OData-Version", "4.0");
+    xhr.send();
+    if (xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
+      var desc = "";
+      if (data.Description && data.Description.LocalizedLabels && data.Description.LocalizedLabels.length > 0) {
+        desc = data.Description.LocalizedLabels[0].Label;
+      }
+      try {
+        var config = JSON.parse(desc);
+        if (config.themeColor) {
+          document.documentElement.style.setProperty('--primary', config.themeColor);
+          document.documentElement.style.setProperty('--primary-hover', config.themeColor);
+          // Set text color based on luminance
+          var hex = config.themeColor.replace('#', '');
+          var r = parseInt(hex.substring(0, 2), 16);
+          var g = parseInt(hex.substring(2, 4), 16);
+          var b = parseInt(hex.substring(4, 6), 16);
+          var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          var textColor = luminance > 0.55 ? '#242424' : '#fff';
+          document.documentElement.style.setProperty('--primary-text', textColor);
+        }
+      } catch(e) {}
+    }
+  }
+
+  function loadQuestions() {
+    var baseUrl = getBaseUrl();
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", baseUrl + "/api/data/v9.2/" + ENTITY_DEF_PATH + "/Attributes?$filter=IsCustomAttribute eq true&$select=LogicalName,AttributeType,DisplayName,Description,SchemaName", false);
+    xhr.setRequestHeader("OData-MaxVersion", "4.0");
+    xhr.setRequestHeader("OData-Version", "4.0");
+    xhr.send();
+
+    if (xhr.status !== 200) {
+      showError("Failed to load survey questions.");
+      return;
+    }
+
+    var data = JSON.parse(xhr.responseText);
+    loadedQuestions = [];
+
+    data.value.forEach(function(attr) {
+      if (EXCLUDED_FIELDS.indexOf(attr.LogicalName) >= 0) return;
+      if (attr.AttributeType === "Virtual" || attr.AttributeType === "Lookup") return;
+
+      var desc = "";
+      if (attr.Description && attr.Description.LocalizedLabels && attr.Description.LocalizedLabels.length > 0) {
+        desc = attr.Description.LocalizedLabels[0].Label;
+      }
+      var meta = null;
+      try { meta = JSON.parse(desc); } catch(e) {}
+      if (!meta || !meta.survey || !meta.active) return;
+
+      var displayName = "";
+      if (attr.DisplayName && attr.DisplayName.LocalizedLabels && attr.DisplayName.LocalizedLabels.length > 0) {
+        displayName = attr.DisplayName.LocalizedLabels[0].Label;
+      }
+
+      loadedQuestions.push({
+        fieldName: attr.LogicalName,
+        questionText: displayName,
+        type: attr.AttributeType,
+        order: meta.order || 99,
+        mandatory: !!meta.mandatory
+      });
+    });
+
+    loadedQuestions.sort(function(a, b) { return a.order - b.order; });
+    renderQuestions();
+  }
+
+  function showError(msg) {
+    var container = document.getElementById('questionsContainer');
+    container.innerHTML = '<div class="error-msg">' + escapeHtml(msg) + '</div>';
+  }
+
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+  }
+
+  function renderQuestions() {
+    var container = document.getElementById('questionsContainer');
+    container.innerHTML = '';
+
+    if (loadedQuestions.length === 0) {
+      container.innerHTML = '<div class="error-msg">No survey questions configured. Please contact your administrator.</div>';
+      return;
+    }
+
+    loadedQuestions.forEach(function (q, idx) {
+      var questionNumber = idx + 1;
+
+      var reqMark = q.mandatory ? '<span class="required-mark">*</span>' : '';
+
+      if (q.type === "Boolean") {
+        var toggleId = 'toggle_' + idx;
+        var card = document.createElement('div');
+        card.className = 'question';
+        card.innerHTML =
+          '<span class="question-number">' + questionNumber + '</span>' +
+          '<span class="question-text">' + escapeHtml(q.questionText) + reqMark + '</span>' +
+          '<div class="toggle">' +
+            '<input type="checkbox" id="' + toggleId + '" data-field="' + q.fieldName + '" data-type="Boolean" />' +
+            '<label for="' + toggleId + '">' +
+              '<span class="slider"></span>' +
+              '<span class="toggle-label" id="' + toggleId + '_label">No</span>' +
+            '</label>' +
+          '</div>';
+        container.appendChild(card);
+        card.querySelector('input[type="checkbox"]').addEventListener('change', function () {
+          document.getElementById(this.id + '_label').textContent = this.checked ? 'Yes' : 'No';
+          checkMandatory();
+        });
+      } else {
+        var card = document.createElement('div');
+        card.className = 'question text-question';
+        var inputHtml = '';
+        var inputType = 'text';
+        var placeholder = 'Enter details...';
+
+        if (q.type === "Integer") { inputType = 'number'; placeholder = 'Enter a number...'; }
+        else if (q.type === "DateTime") { inputType = 'date'; placeholder = ''; }
+        else if (q.type === "Decimal") { inputType = 'number'; placeholder = 'Enter a decimal...'; }
+
+        // Check for email format via field name heuristic or just use text
+        if (q.type === "Memo") {
+          inputHtml = '<textarea class="text-input" data-field="' + q.fieldName + '" data-type="Memo" rows="3" placeholder="Enter details..."></textarea>';
+        } else if (q.type === "Decimal") {
+          inputHtml = '<input type="number" step="0.01" class="text-input" data-field="' + q.fieldName + '" data-type="Decimal" placeholder="' + placeholder + '" />';
+        } else if (q.type === "String" || q.type === "StringEmail") {
+          inputHtml = '<textarea class="text-input" data-field="' + q.fieldName + '" data-type="' + q.type + '" rows="1" placeholder="' + placeholder + '"></textarea>';
+        } else {
+          inputHtml = '<input type="' + inputType + '" class="text-input" data-field="' + q.fieldName + '" data-type="' + q.type + '" placeholder="' + placeholder + '" />';
+        }
+
+        card.innerHTML =
+          '<div style="display:flex;align-items:center;">' +
+            '<span class="question-number">' + questionNumber + '</span>' +
+            '<span class="question-text">' + escapeHtml(q.questionText) + reqMark + '</span>' +
+          '</div>' + inputHtml;
+        container.appendChild(card);
+      }
+    });
+
+    // Attach listeners to required fields for real-time validation
+    loadedQuestions.forEach(function(q) {
+      if (!q.mandatory || q.type === 'Boolean') return;
+      var el = document.querySelector('[data-field="' + q.fieldName + '"]');
+      if (el) el.addEventListener('input', checkMandatory);
+    });
+
+    // Auto-expand textareas as user types
+    document.querySelectorAll('textarea.text-input').forEach(function(ta) {
+      ta.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+      });
+    });
+
+    checkMandatory();
+  }
+
+  function checkMandatory() {
+    var hasMandatory = false;
+    var allFilled = true;
+    loadedQuestions.forEach(function(q) {
+      if (!q.mandatory) return;
+      hasMandatory = true;
+      if (q.type === 'Boolean') return;
+      var el = document.querySelector('[data-field="' + q.fieldName + '"]');
+      if (!el || !el.value.trim()) allFilled = false;
+    });
+    document.getElementById('btnSubmit').disabled = hasMandatory && !allFilled;
+  }
+
+  var isPreviewMode = (window.location.search.indexOf('preview') !== -1) ||
+                      (window.location.hash.indexOf('preview') !== -1);
+
+  function submitSurvey() {
+    if (isPreviewMode) return;
+
+    // Validate mandatory fields
+    var missing = [];
+    loadedQuestions.forEach(function(q) {
+      if (!q.mandatory) return;
+      if (q.type === 'Boolean') return; // toggles always have a value
+      var el = document.querySelector('[data-field="' + q.fieldName + '"]');
+      if (!el || !el.value.trim()) missing.push(q);
+    });
+
+    // Clear previous error highlights
+    var allCards = document.querySelectorAll('.question, .text-question');
+    allCards.forEach(function(c) { c.classList.remove('validation-error'); });
+
+    if (missing.length > 0) {
+      missing.forEach(function(q) {
+        var el = document.querySelector('[data-field="' + q.fieldName + '"]');
+        if (el) {
+          var card = el.closest('.question');
+          if (card) card.classList.add('validation-error');
+        }
+      });
+      return;
+    }
+
+    var btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Saving...';
+
+    var Xrm = getXrm();
+    if (!Xrm) {
+      alert('Unable to access Dynamics 365 context.');
+      btn.disabled = false;
+      btn.textContent = 'Submit Survey';
+      return;
+    }
+
+    var record = {};
+    var conversationId = getConversationId();
+    if (conversationId) {
+      record.crd9b_newconversationid = conversationId;
+      record['crd9b_ConversationID@odata.bind'] = '/msdyn_ocliveworkitems(' + conversationId + ')';
+    }
+
+    loadedQuestions.forEach(function (q) {
+      if (q.type === "Boolean") {
+        var cb = document.querySelector('input[type="checkbox"][data-field="' + q.fieldName + '"]');
+        if (cb) record[q.fieldName] = cb.checked;
+      } else if (q.type === "Memo") {
+        var ta = document.querySelector('textarea[data-field="' + q.fieldName + '"]');
+        if (ta && ta.value) record[q.fieldName] = ta.value;
+      } else if (q.type === "Integer") {
+        var el = document.querySelector('[data-field="' + q.fieldName + '"]');
+        if (el && el.value !== '') record[q.fieldName] = parseInt(el.value);
+      } else if (q.type === "Decimal") {
+        var el = document.querySelector('[data-field="' + q.fieldName + '"]');
+        if (el && el.value !== '') record[q.fieldName] = parseFloat(el.value);
+      } else {
+        var el = document.querySelector('[data-field="' + q.fieldName + '"]');
+        if (el && el.value) record[q.fieldName] = el.value;
+      }
+    });
+
+    Xrm.WebApi.createRecord('crd9b_agentsurveyform', record).then(
+      function () {
+        // Mark in localStorage so other tabs/iframes know this conv was surveyed
+        try {
+          var key = '_agentSurveyShown';
+          var map = JSON.parse(localStorage.getItem(key) || '{}');
+          var cId = getConversationId();
+          if (cId) { map[cId.toLowerCase()] = Date.now(); localStorage.setItem(key, JSON.stringify(map)); }
+        } catch (e) { /* ignore */ }
+        document.getElementById('successOverlay').classList.add('show');
+        setTimeout(function () { closeDialog(); }, 1500);
+      },
+      function (error) {
+        alert('Error saving survey: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = 'Submit Survey';
+      }
+    );
+  }
+
+  function closeDialog() {
+    // Try clicking the D365 dialog close button
+    try {
+      var parentDoc = window.parent.document;
+      var iframes = parentDoc.querySelectorAll('iframe');
+      for (var i = 0; i < iframes.length; i++) {
+        try {
+          if (iframes[i].contentWindow === window) {
+            var el = iframes[i];
+            while (el && el !== parentDoc.body) {
+              if (el.getAttribute && (el.getAttribute('role') === 'dialog' || el.classList.contains('ms-Dialog-main') || el.getAttribute('data-id') === 'DialogContainer')) {
+                var closeBtn = el.querySelector('button[data-id="dialogCloseIconBtn"], button.dlg-close-btn, button[title="Close"], button[aria-label="Close"]');
+                if (closeBtn) {
+                  closeBtn.style.display = '';
+                  closeBtn.click();
+                  return;
+                }
+                break;
+              }
+              el = el.parentElement;
+            }
+            break;
+          }
+        } catch (ex) { /* cross-origin */ }
+      }
+    } catch (e) { /* ignore */ }
+    // Fallback
+    try { window.close(); } catch (e) { /* ignore */ }
+  }
+
+  // Hide the close (X) button ONLY on the dialog that contains this survey iframe
+  if (!isPreviewMode) try {
+    var parentDoc = window.parent.document;
+    // Find our iframe, then walk up to the dialog container and hide only its close button
+    var iframes = parentDoc.querySelectorAll('iframe');
+    var myDialog = null;
+    for (var i = 0; i < iframes.length; i++) {
+      try {
+        if (iframes[i].contentWindow === window) {
+          // Walk up to find the dialog container
+          var el = iframes[i];
+          while (el && el !== parentDoc.body) {
+            if (el.getAttribute && (el.getAttribute('role') === 'dialog' || el.classList.contains('ms-Dialog-main') || el.getAttribute('data-id') === 'DialogContainer')) {
+              myDialog = el;
+              break;
+            }
+            el = el.parentElement;
+          }
+          break;
+        }
+      } catch(ex) {}
+    }
+
+    if (myDialog) {
+      function hideBtnInDialog() {
+        var btns = myDialog.querySelectorAll('button[data-id="dialogCloseIconBtn"], button.dlg-close-btn, button[title="Close"], button[aria-label="Close"], .ms-Dialog-button--close, button[data-id="dialogPopOutBtn"], button[title="Pop out"], button[aria-label="Pop out"], .ms-Dialog-button--popout, button[title="Open in new window"], button[aria-label="Open in new window"]');
+        btns.forEach(function(btn) { btn.style.display = 'none'; });
+        return btns.length > 0;
+      }
+      hideBtnInDialog();
+      var obs = new MutationObserver(function() { if (hideBtnInDialog()) obs.disconnect(); });
+      obs.observe(myDialog, { childList: true, subtree: true });
+      var att = 0;
+      var ri = setInterval(function() { att++; if (hideBtnInDialog() || att > 15) clearInterval(ri); }, 300);
+    }
+  } catch(e) { /* ignore */ }
+
+  loadThemeColor();
+  loadQuestions();
+</script>
+</body>
+</html>

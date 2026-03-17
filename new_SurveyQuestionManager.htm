@@ -1,0 +1,2365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Survey Manager</title>
+<style>
+  :root {
+    --primary: #5B5FC7;
+    --primary-hover: #4B4FB7;
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --text: #242424;
+    --text-secondary: #616161;
+    --border: #e0e0e0;
+    --success: #0f7b0f;
+    --danger: #d13438;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .header {
+    background: #fff;
+    color: #242424;
+    padding: 24px 32px 16px 32px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; color: #242424; margin-bottom: 4px; }
+  .header p { font-size: 14px; color: #616161; margin-top: 0; }
+  .toolbar {
+    padding: 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .toolbar .info { font-size: 13px; color: var(--text-secondary); }
+  .btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-add {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  .btn-add:hover {
+    background: #1d4ed8;
+  }
+  .btn-delete-icon {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    display: inline-flex;
+    align-items: center;
+  }
+  .btn-delete-icon:hover { color: var(--danger); background: rgba(209,52,56,0.08); }
+  .btn-delete-icon:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-edit {
+    background: none;
+    border: none;
+    color: #bbb;
+    cursor: pointer;
+    padding: 2px 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+    transition: color 0.15s;
+  }
+  .btn-edit:hover {
+    color: var(--primary);
+  }
+  .btn-success { background: var(--success); color: #fff; font-size: 12px; padding: 5px 14px; }
+  .btn-danger { background: var(--danger); color: #fff; font-size: 12px; padding: 5px 14px; }
+  .btn-sm { font-size: 12px; padding: 5px 14px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .table-wrap {
+    padding: 0 32px 32px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th, td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  th {
+    background: #fafafa;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f9f9fb; }
+  .drag-handle {
+    cursor: grab;
+    color: #ccc;
+    padding: 0 6px;
+    user-select: none;
+    transition: color 0.15s;
+  }
+  .drag-handle:hover { color: #888; }
+  .drag-handle:active { cursor: grabbing; }
+  tr.dragging { opacity: 0.4; background: #eef; }
+  tr.drag-over td { border-top: 2px solid var(--primary); }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-active { background: #dff6dd; color: var(--success); }
+  .badge-inactive { background: #fde7e9; color: var(--danger); }
+  .badge-required { background: #fde7e9; color: var(--danger); }
+  .badge-optional { background: #e0edff; color: #2563eb; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 28px 32px;
+    width: 440px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+  .modal h2 { font-size: 16px; margin-bottom: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(91,95,199,0.15);
+  }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    z-index: 200;
+    animation: slideIn 0.3s;
+  }
+  .toast-success { background: var(--success); }
+  .toast-error { background: var(--danger); }
+  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty-state { text-align: center; padding: 48px; color: var(--text-secondary); font-size: 14px; }
+  /* Theme Color Picker */
+  .theme-section {
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .theme-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .color-swatches {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+  .color-swatch:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .color-swatch.active {
+    border-color: #242424;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #242424;
+  }
+  .color-swatch.active::after {
+    content: '\2713';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .custom-color-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .custom-color-input {
+    width: 28px;
+    height: 28px;
+    border: 2px dashed #ccc;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
+  }
+  .custom-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+  .custom-color-input::-webkit-color-swatch { border: none; border-radius: 50%; }
+  .custom-color-input::-moz-color-swatch { border: none; border-radius: 50%; }
+  .custom-color-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .theme-saving {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+  .footer-credit {
+    text-align: center;
+    padding: 24px 16px 16px;
+    font-size: 11px;
+    color: #aaa;
+  }
+  .footer-credit a {
+    color: #aaa;
+    text-decoration: none;
+  }
+  .footer-credit a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+  }
+  .global-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #ccc;
+    border-radius: 22px;
+    transition: 0.2s;
+  }
+  .switch-slider::before {
+    content: '';
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .switch input:checked + .switch-slider { background: #2563eb; }
+  .switch input:checked + .switch-slider::before { transform: translateX(18px); }
+
+  /* Preview */
+  .btn-preview {
+    background: #fff;
+    border: 1px solid #d0d5dd;
+    color: #2563eb;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .btn-preview:hover { border-color: #2563eb; box-shadow: 0 2px 6px rgba(37,99,235,0.15); }
+  .preview-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  .preview-overlay.active { display: flex; }
+  .preview-frame {
+    width: 500px;
+    height: 620px;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+    position: relative;
+    background: #fafafa;
+    display: flex;
+    flex-direction: column;
+  }
+  .preview-titlebar {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #242424;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .preview-close {
+    background: transparent;
+    border: none;
+    color: #616161;
+    font-size: 18px;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .preview-close:hover { background: #f0f0f0; }
+  .pv-badge {
+    display: inline-block;
+    background: rgba(91,95,199,0.9);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    position: absolute;
+    top: 46px;
+    left: 10px;
+    z-index: 2;
+    letter-spacing: 0.5px;
+  }
+  .preview-iframe {
+    width: 100%;
+    flex: 1;
+    border: none;
+  }
+
+  /* Dashboard */
+  .btn-dashboard {
+    background: transparent;
+    color: #424242;
+    border: 1px solid #d1d1d1;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-dashboard:hover {
+    background: #f5f5f5;
+    border-color: #b3b3b3;
+  }
+  .dash-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #f0f2f5;
+    z-index: 400;
+    overflow-y: auto;
+  }
+  .dash-overlay.active { display: block; }
+  .dash-header {
+    background: #fff;
+    padding: 20px 32px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .dash-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #242424;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dash-close {
+    background: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    color: #616161;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .dash-close:hover { background: #f5f5f5; color: #242424; }
+  .dash-filters {
+    padding: 16px 32px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+  }
+  .dash-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .dash-filter-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #616161;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .dash-filter-group select,
+  .dash-filter-group input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+    color: #242424;
+    min-width: 160px;
+  }
+  .dash-filter-group select:focus,
+  .dash-filter-group input[type="date"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102,126,234,0.15);
+  }
+  .dash-btn-reset {
+    margin-left: auto;
+    padding: 6px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+    height: 35px;
+    width: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dash-btn-reset:hover { border-color: #667eea; background: #f5f7ff; }
+
+  /* Multi-select lookup (shared by Agent & Question filters) */
+  .ms-lookup {
+    position: relative;
+    min-width: 260px;
+  }
+  .ms-lookup-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 8px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    background: #fff;
+    min-height: 35px;
+    align-items: center;
+    cursor: text;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ms-lookup-box:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102,126,234,0.15);
+  }
+  .ms-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #e8ecf4;
+    color: #242424;
+    padding: 2px 6px 2px 10px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    animation: chipIn 0.2s;
+  }
+  @keyframes chipIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .ms-chip-x {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+  }
+  .ms-chip-x:hover { color: #d13438; background: rgba(209,52,56,0.1); }
+  .ms-lookup-input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    font-family: inherit;
+    min-width: 80px;
+    flex: 1;
+    padding: 3px 0;
+    background: transparent;
+    color: #242424;
+  }
+  .ms-lookup-input::placeholder { color: #a0a0a0; }
+  .ms-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #d0d5dd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 20;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+  }
+  .ms-dropdown.open { display: block; }
+  .ms-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #242424;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.1s;
+  }
+  .ms-dropdown-item:hover { background: #f0f2f5; }
+  .ms-dropdown-item.selected { background: #eef1fb; font-weight: 600; }
+  .ms-dropdown-item .ms-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1.5px solid #d0d5dd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .ms-dropdown-item.selected .ms-check {
+    background: #667eea;
+    border-color: #667eea;
+  }
+  .ms-dropdown-empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+  }
+    transition: all 0.15s;
+    height: 35px;
+  }
+  .dash-btn-reset:hover { border-color: #667eea; color: #667eea; }
+  .dash-body {
+    padding: 24px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .dash-kpi {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid #e8e8e8;
+    border-left: 4px solid var(--kpi-accent, #667eea);
+    transition: box-shadow 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .dash-kpi:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-1px); }
+  .dash-kpi:nth-child(1) { --kpi-accent: #667eea; }
+  .dash-kpi:nth-child(2) { --kpi-accent: #38bdf8; }
+  .dash-kpi:nth-child(3) { --kpi-accent: #f59e0b; }
+  .dash-kpi:nth-child(4) { --kpi-accent: #10b981; }
+  .dash-kpi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--kpi-accent, #667eea);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .dash-kpi-icon svg { width: 22px; height: 22px; }
+  .dash-kpi-info { display: flex; flex-direction: column; gap: 4px; }
+  .dash-kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .dash-kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #242424;
+    line-height: 1;
+  }
+  .dash-charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .dash-chart-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid #e8e8e8;
+    overflow: hidden;
+  }
+  .dash-chart-card.full { grid-column: 1 / -1; }
+  .dash-chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #242424;
+    margin-bottom: 16px;
+  }
+  .dash-loading {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 14px;
+    color: #616161;
+  }
+  .dash-no-data {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+    font-size: 13px;
+  }
+  .d3-tooltip {
+    position: fixed;
+    background: rgba(36,36,36,0.92);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    white-space: nowrap;
+  }
+  .dash-chart-card svg { display: block; }
+
+  /* Response table */
+  .resp-table-wrap {
+    margin-top: 14px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid #e8e8e8;
+    overflow: hidden;
+  }
+  .resp-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e8e8e8;
+  }
+  .resp-table-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #242424;
+  }
+  .resp-table-count {
+    font-size: 12px;
+    color: #616161;
+    background: #f0f2f5;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  .resp-expand-btn {
+    background: none;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #616161;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .resp-expand-btn:hover { border-color: #667eea; color: #667eea; }
+  .resp-table-scroll {
+    max-height: 520px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .resp-table-scroll.expanded {
+    overflow-x: auto;
+  }
+  .resp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+  }
+  .resp-table-scroll.expanded .resp-table {
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
+  }
+  .resp-table thead { position: sticky; top: 0; z-index: 2; }
+  .resp-table th {
+    background: #f8f9fa;
+    color: #444;
+    font-weight: 600;
+    padding: 8px 10px;
+    text-align: left;
+    white-space: normal;
+    word-break: break-word;
+    border-bottom: 2px solid #e8e8e8;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    position: relative;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  .resp-table-scroll.expanded .resp-table th {
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+  .resp-table th:hover { background: #eef1fb; }
+  .resp-table th .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 10px;
+    color: #999;
+    transition: color 0.15s;
+  }
+  .resp-table th.sorted .sort-arrow { color: #667eea; }
+  .resp-table td {
+    padding: 7px 10px;
+    color: #242424;
+    border-bottom: 1px solid #f0f0f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  .resp-table-scroll.expanded .resp-table td {
+    padding: 9px 14px;
+    font-size: 13px;
+    max-width: 250px;
+  }
+  .resp-table tbody tr:hover { background: #f8f9fc; }
+  .resp-table tbody tr:last-child td { border-bottom: none; }
+  .resp-table .bool-yes { color: #0e7a0d; font-weight: 600; }
+  .resp-table .bool-no { color: #d13438; font-weight: 600; }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .dash-kpis { grid-template-columns: repeat(2, 1fr); }
+    .dash-charts { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .header { padding: 16px 16px 12px; flex-wrap: wrap; gap: 12px; }
+    .header h1 { font-size: 17px; }
+    .toolbar { padding: 12px 16px; flex-wrap: wrap; gap: 12px; }
+    .table-wrap { padding: 0 16px 16px; overflow-x: auto; }
+    table { min-width: 600px; }
+    .theme-section { padding: 12px 16px; flex-wrap: wrap; gap: 12px; }
+    .modal { width: 92vw; max-width: 440px; padding: 20px; }
+    .preview-frame { width: 96vw; height: 80vh; }
+    .dash-header { padding: 16px; }
+    .dash-filters { padding: 12px 16px; }
+    .dash-body { padding: 16px; }
+    .dash-kpi { padding: 16px; }
+    .dash-kpi-value { font-size: 24px; }
+    .dash-filter-group select,
+    .dash-filter-group input[type="date"] { min-width: 130px; }
+  }
+  @media (max-width: 480px) {
+    .header { padding: 12px; }
+    .header p { font-size: 12px; }
+    .btn-dashboard { padding: 8px 14px; font-size: 12px; }
+    .toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+    .toolbar > div { flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+    .btn-add, .btn-preview { padding: 8px 16px; font-size: 13px; }
+    .dash-kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .dash-filter-group select,
+    .dash-filter-group input[type="date"] { min-width: 110px; width: 100%; }
+    .dash-filters { gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Agent Survey Manager</h1>
+    <p>Manage survey questions presented to agents after customer interactions</p>
+  </div>
+  <button class="btn-dashboard" onclick="openDashboard()"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M3 3.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-13Zm5 4a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-9Zm5.5-1.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5h-2Z"/></svg>Analytics</button>
+</div>
+
+<div class="toolbar">
+  <div class="global-toggle">
+    <label class="switch">
+      <input type="checkbox" id="globalToggle" onchange="toggleSurveyGlobal(this.checked)" />
+      <span class="switch-slider"></span>
+    </label>
+    <span id="globalStatus" style="font-size:13px;font-weight:600;">Loading...</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span class="info" id="questionCount">Loading...</span>
+    <button class="btn btn-preview" onclick="showPreview()">Preview</button>
+    <button class="btn btn-add" onclick="openModal()">+ New Question</button>
+  </div>
+</div>
+
+<div class="theme-section">
+  <span class="theme-label">Popup Theme Color</span>
+  <div class="color-swatches" id="colorSwatches">
+    <div class="color-swatch" data-color="#5B5FC7" style="background:#5B5FC7" onclick="selectThemeColor('#5B5FC7')" title="Indigo (Default)"></div>
+    <div class="color-swatch" data-color="#2563eb" style="background:#2563eb" onclick="selectThemeColor('#2563eb')" title="Blue"></div>
+    <div class="color-swatch" data-color="#0f7b0f" style="background:#0f7b0f" onclick="selectThemeColor('#0f7b0f')" title="Green"></div>
+    <div class="color-swatch" data-color="#d13438" style="background:#d13438" onclick="selectThemeColor('#d13438')" title="Red"></div>
+    <div class="color-swatch" data-color="#da3b01" style="background:#da3b01" onclick="selectThemeColor('#da3b01')" title="Orange"></div>
+    <div class="color-swatch" data-color="#8764b8" style="background:#8764b8" onclick="selectThemeColor('#8764b8')" title="Purple"></div>
+    <div class="color-swatch" data-color="#008272" style="background:#008272" onclick="selectThemeColor('#008272')" title="Teal"></div>
+    <div class="color-swatch" data-color="#69797e" style="background:#69797e" onclick="selectThemeColor('#69797e')" title="Steel"></div>
+    <div class="color-swatch" data-color="#242424" style="background:#242424" onclick="selectThemeColor('#242424')" title="Dark"></div>
+    <div class="custom-color-wrap">
+      <input type="color" class="custom-color-input" id="customColorPicker" value="#5B5FC7" onchange="selectThemeColor(this.value)" title="Pick custom color" />
+      <span class="custom-color-label">Custom</span>
+    </div>
+  </div>
+  <span class="theme-saving" id="themeSaving"><span class="spinner"></span>Saving</span>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Order</th>
+        <th>Question (Field Label)</th>
+        <th>Data Type</th>
+        <th>Field Name</th>
+        <th>Required</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="questionList">
+      <tr><td colspan="6" class="empty-state">Loading questions...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- New Question Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>New Survey Question</h2>
+    <div class="form-group">
+      <label>Question Text (becomes the field label)</label>
+      <textarea id="txtQuestion" rows="1" placeholder="e.g. Was this a good call?" style="resize:none;overflow:hidden;"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Data Type</label>
+      <select id="selType">
+        <option value="Boolean">Toggle (Yes / No)</option>
+        <option value="String">Text</option>
+        <option value="Integer">Number (Whole)</option>
+        <option value="DateTime">Date</option>
+        <option value="StringEmail">Email</option>
+        <option value="Decimal">Decimal</option>
+        <option value="Memo">Multi-line Text</option>
+      </select>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="chkMandatory" style="width:auto;" />
+      <label for="chkMandatory" style="margin-bottom:0;cursor:pointer;">Required field</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="btnCreate" onclick="createQuestion()">Create Question</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Question Modal -->
+<div class="modal-overlay" id="editModalOverlay">
+  <div class="modal">
+    <h2>Edit Survey Question</h2>
+    <div class="form-group">
+      <label>Question Text</label>
+      <textarea id="editTxtQuestion" rows="1" style="resize:none;overflow:hidden;"></textarea>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="editChkMandatory" style="width:auto;" />
+      <label for="editChkMandatory" style="margin-bottom:0;cursor:pointer;">Required field</label>
+    </div>
+    <input type="hidden" id="editMetadataId" />
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" id="btnSaveEdit" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModalOverlay">
+  <div class="modal" style="width:400px;">
+    <h2 style="color:var(--danger);">Delete Question</h2>
+    <p id="deleteModalMsg" style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;"></p>
+    <p style="font-size:12px;color:var(--danger);font-weight:600;">This action cannot be undone.</p>
+    <input type="hidden" id="deleteMetadataId" />
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="btnConfirmDelete" onclick="confirmDelete()" style="padding:8px 20px;">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="preview-overlay" id="previewOverlay" onclick="if(event.target===this)closePreview()">
+  <div class="preview-frame">
+    <div class="preview-titlebar">
+      <span>Agent Survey - Wrap-up</span>
+      <button class="preview-close" onclick="closePreview()">&times;</button>
+    </div>
+    <span class="pv-badge">PREVIEW</span>
+    <iframe id="previewIframe" class="preview-iframe"></iframe>
+  </div>
+</div>
+
+<!-- Dashboard Overlay -->
+<div class="dash-overlay" id="dashOverlay">
+  <div class="dash-header">
+    <h2>Agent Survey Analytics</h2>
+    <button class="dash-close" onclick="closeDashboard()" title="Close">&times;</button>
+  </div>
+  <div class="dash-filters">
+    <div class="dash-filter-group"><label>Agent</label>
+      <div class="ms-lookup" id="agentLookup">
+        <div class="ms-lookup-box" id="agentLookupBox" onclick="document.getElementById('agentLookupInput').focus()">
+          <input class="ms-lookup-input" id="agentLookupInput" type="text" placeholder="Search agents..." autocomplete="off" oninput="filterAgentDropdown()" onfocus="showAgentDropdown()" />
+        </div>
+        <div class="ms-dropdown" id="agentDropdown"></div>
+      </div>
+    </div>
+    <div class="dash-filter-group"><label>Question</label>
+      <div class="ms-lookup" id="questionLookup">
+        <div class="ms-lookup-box" id="questionLookupBox" onclick="document.getElementById('questionLookupInput').focus()">
+          <input class="ms-lookup-input" id="questionLookupInput" type="text" placeholder="Search questions..." autocomplete="off" oninput="filterQuestionDropdown()" onfocus="showQuestionDropdown()" />
+        </div>
+        <div class="ms-dropdown" id="questionDropdown"></div>
+      </div>
+    </div>
+    <div class="dash-filter-group"><label>From</label><input type="date" id="dashFilterFrom" onchange="applyDashFilters()" /></div>
+    <div class="dash-filter-group"><label>To</label><input type="date" id="dashFilterTo" onchange="applyDashFilters()" /></div>
+    <div class="dash-filter-group" style="justify-content:flex-end;"><label>Show Inactive Questions</label><label class="switch" style="margin-top:2px;"><input type="checkbox" id="dashShowInactive" onchange="toggleShowInactive()"><span class="switch-slider"></span></label></div>
+    <button class="dash-btn-reset" onclick="resetDashFilters()" title="Reset filters"><img src="/WebResources/maulabs_ic_fluent_arrow_reset_48_regular" alt="Reset" style="width:20px;height:20px;" /></button>
+  </div>
+  <div class="dash-body" id="dashBody">
+    <div class="dash-kpis">
+      <div class="dash-kpi"><div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div class="dash-kpi-info"><div class="dash-kpi-label">Total Responses</div><div class="dash-kpi-value" id="kpiTotal">-</div></div></div>
+      <div class="dash-kpi"><div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="dash-kpi-info"><div class="dash-kpi-label">This Week</div><div class="dash-kpi-value" id="kpiWeek">-</div></div></div>
+      <div class="dash-kpi"><div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="dash-kpi-info"><div class="dash-kpi-label">Avg / Day</div><div class="dash-kpi-value" id="kpiAvg">-</div></div></div>
+      <div class="dash-kpi"><div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="dash-kpi-info"><div class="dash-kpi-label">Active Questions</div><div class="dash-kpi-value" id="kpiQuestions">-</div></div></div>
+    </div>
+    <div class="dash-loading" id="dashLoadingMsg" style="display:none;"><span class="spinner"></span> Loading survey data...</div>
+    <div class="dash-charts" id="dashChartsArea"></div>
+    <div id="dashResponseTable"></div>
+  </div>
+</div>
+
+<script>
+var SURVEY_ENTITY_NAME = "crd9b_agentsurveyform";
+var ENTITY_DEF_PATH = "EntityDefinitions(LogicalName='" + SURVEY_ENTITY_NAME + "')";
+var BASE_URL = "";
+var questions = [];
+var surveyGlobalEnabled = true;
+var currentThemeColor = '#5B5FC7';
+
+// Non-survey fields to exclude
+var EXCLUDED_FIELDS = [
+    "crd9b_agentsurveyformid", "crd9b_conversationid", "crd9b_conversationidname",
+    "crd9b_hardcodetext", "crd9b_newconversationid", "crd9b_recordingurl", "crd9b_surveyid"
+];
+
+function init() {
+    if (window.parent && window.parent.Xrm) {
+        BASE_URL = window.parent.Xrm.Utility.getGlobalContext().getClientUrl();
+    } else if (window.Xrm) {
+        BASE_URL = Xrm.Utility.getGlobalContext().getClientUrl();
+    } else {
+        BASE_URL = window.location.origin;
+    }
+
+    // Auto-expand textareas in modals
+    ['txtQuestion','editTxtQuestion'].forEach(function(id) {
+        var ta = document.getElementById(id);
+        if (ta) ta.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    });
+
+    loadGlobalConfig();
+    loadQuestions();
+}
+
+function loadGlobalConfig() {
+    var xhr = apiCall("GET",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH + "?$select=Description");
+    if (xhr.status === 200) {
+        var data = JSON.parse(xhr.responseText);
+        var desc = "";
+        if (data.Description && data.Description.LocalizedLabels && data.Description.LocalizedLabels.length > 0) {
+            desc = data.Description.LocalizedLabels[0].Label;
+        }
+        try {
+            var config = JSON.parse(desc);
+            surveyGlobalEnabled = config.surveyEnabled !== false;
+            if (config.themeColor) currentThemeColor = config.themeColor;
+        } catch(e) {
+            surveyGlobalEnabled = true;
+        }
+    }
+    document.getElementById("globalToggle").checked = surveyGlobalEnabled;
+    updateGlobalStatus();
+    highlightActiveSwatch();
+}
+
+function updateGlobalStatus() {
+    var el = document.getElementById("globalStatus");
+    if (surveyGlobalEnabled) {
+        el.textContent = "Survey Popup Enabled";
+        el.style.color = "#242424";
+    } else {
+        el.textContent = "Survey Popup Disabled";
+        el.style.color = "#242424";
+    }
+}
+
+function toggleSurveyGlobal(enabled) {
+    var toggleEl = document.getElementById("globalToggle");
+    var statusEl = document.getElementById("globalStatus");
+    toggleEl.disabled = true;
+    statusEl.textContent = "Updating...";
+    statusEl.style.color = "var(--text-secondary)";
+
+    var descJson = JSON.stringify({ surveyEnabled: enabled, themeColor: currentThemeColor });
+
+    apiCallAsync("PUT",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH,
+        {
+            "Description": {
+                "@odata.type": "Microsoft.Dynamics.CRM.Label",
+                "LocalizedLabels": [{
+                    "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",
+                    "Label": descJson,
+                    "LanguageCode": 1033
+                }]
+            }
+        })
+    .then(function(xhr) {
+        if (xhr.status === 204 || xhr.status === 200) {
+            return apiCallAsync("POST", "/api/data/v9.2/PublishXml", {
+                ParameterXml: "<importexportxml><entities><entity>crd9b_agentsurveyform</entity></entities></importexportxml>"
+            });
+        } else {
+            var errMsg = "Failed (HTTP " + xhr.status + ")";
+            try { errMsg = JSON.parse(xhr.responseText).error.message; } catch(e) {}
+            throw new Error(errMsg);
+        }
+    })
+    .then(function() {
+        surveyGlobalEnabled = enabled;
+        updateGlobalStatus();
+        toggleEl.disabled = false;
+        toast(enabled ? "Survey popup enabled globally!" : "Survey popup disabled globally!");
+    })
+    .catch(function(err) {
+        toast(err.message || "Failed to update global setting.", true);
+        toggleEl.checked = surveyGlobalEnabled;
+        updateGlobalStatus();
+        toggleEl.disabled = false;
+    });
+}
+
+function apiCall(method, url, body) {
+    var xhr = new XMLHttpRequest();
+    xhr.open(method, BASE_URL + url, false);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("OData-MaxVersion", "4.0");
+    xhr.setRequestHeader("OData-Version", "4.0");
+    xhr.setRequestHeader("MSCRM.MergeLabels", "true");
+    if (body) {
+        xhr.send(JSON.stringify(body));
+    } else {
+        xhr.send();
+    }
+    return xhr;
+}
+
+function apiCallAsync(method, url, body) {
+    return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open(method, BASE_URL + url, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("OData-MaxVersion", "4.0");
+        xhr.setRequestHeader("OData-Version", "4.0");
+        xhr.setRequestHeader("MSCRM.MergeLabels", "true");
+        xhr.onload = function() { resolve(xhr); };
+        xhr.onerror = function() { reject(xhr); };
+        if (body) {
+            xhr.send(JSON.stringify(body));
+        } else {
+            xhr.send();
+        }
+    });
+}
+
+function loadQuestions() {
+    var xhr = apiCall("GET",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH + "/Attributes" +
+        "?$filter=IsCustomAttribute eq true&$select=LogicalName,AttributeType,DisplayName,Description,MetadataId,SchemaName");
+
+    if (xhr.status !== 200) {
+        document.getElementById("questionList").innerHTML =
+            '<tr><td colspan="6" class="empty-state">Error loading fields.</td></tr>';
+        return;
+    }
+
+    var data = JSON.parse(xhr.responseText);
+    questions = [];
+
+    data.value.forEach(function(attr) {
+        // Skip excluded / system fields
+        if (EXCLUDED_FIELDS.indexOf(attr.LogicalName) >= 0) return;
+        if (attr.AttributeType === "Virtual" || attr.AttributeType === "Lookup") return;
+
+        // Check if it has survey metadata in Description
+        var desc = "";
+        if (attr.Description && attr.Description.LocalizedLabels && attr.Description.LocalizedLabels.length > 0) {
+            desc = attr.Description.LocalizedLabels[0].Label;
+        }
+
+        var surveyMeta = null;
+        try { surveyMeta = JSON.parse(desc); } catch(e) {}
+        if (!surveyMeta || !surveyMeta.survey) return;
+
+        var displayName = "";
+        if (attr.DisplayName && attr.DisplayName.LocalizedLabels && attr.DisplayName.LocalizedLabels.length > 0) {
+            displayName = attr.DisplayName.LocalizedLabels[0].Label;
+        }
+
+        questions.push({
+            metadataId: attr.MetadataId,
+            logicalName: attr.LogicalName,
+            schemaName: attr.SchemaName,
+            displayName: displayName,
+            type: attr.AttributeType,
+            active: surveyMeta.active,
+            order: surveyMeta.order || 99,
+            mandatory: !!surveyMeta.mandatory
+        });
+    });
+
+    questions.sort(function(a, b) { return a.order - b.order; });
+    renderTable();
+}
+
+function renderTable() {
+    var tbody = document.getElementById("questionList");
+    document.getElementById("questionCount").textContent = questions.length + " survey question(s)";
+
+    if (questions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No survey questions configured. Click "+ New Question" to add one.</td></tr>';
+        return;
+    }
+
+    var html = "";
+    questions.forEach(function(q, idx) {
+        var typeName = { Boolean: "Toggle (Yes/No)", String: "Text", Integer: "Number", DateTime: "Date", Decimal: "Decimal", Memo: "Multi-line Text" }[q.type] || q.type;
+        var actionBtn = q.active
+            ? '<button class="btn btn-sm" style="width:110px;background:#dff6dd;color:#107c10;border:none;font-weight:600;" id="btn_' + q.metadataId + '" onclick="toggleActive(\'' + q.metadataId + '\', false, this)">Active</button>'
+            : '<button class="btn btn-sm" style="width:110px;background:#fde7e9;color:#c4314b;border:none;font-weight:600;" id="btn_' + q.metadataId + '" onclick="toggleActive(\'' + q.metadataId + '\', true, this)">Inactive</button>';
+        var pencilIcon = '<span class="btn-edit" onclick="openEditModal(\'' + q.metadataId + '\')" title="Edit question"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span>';
+        var deleteBtn = ' <button class="btn-delete-icon" id="del_' + q.metadataId + '" onclick="deleteQuestion(\'' + q.metadataId + '\', this)" title="Delete"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M20 10.5V11H28V10.5C28 8.29086 26.2091 6.5 24 6.5C21.7909 6.5 20 8.29086 20 10.5ZM17.5 11V10.5C17.5 6.91015 20.4101 4 24 4C27.5899 4 30.5 6.91015 30.5 10.5V11H41.75C42.4404 11 43 11.5596 43 12.25C43 12.9404 42.4404 13.5 41.75 13.5H38.8325L36.8329 37.3556C36.518 41.1117 33.3775 44 29.6082 44H18.3923C14.623 44 11.4825 41.1118 11.1676 37.3557L9.16749 13.5H6.25C5.55964 13.5 5 12.9404 5 12.25C5 11.5596 5.55964 11 6.25 11H17.5ZM13.6589 37.1469C13.8652 39.6077 15.9228 41.5 18.3923 41.5H29.6082C32.0777 41.5 34.1353 39.6077 34.3416 37.1468L36.3238 13.5H11.6763L13.6589 37.1469ZM21.5 20.25C21.5 19.5596 20.9404 19 20.25 19C19.5596 19 19 19.5596 19 20.25V34.75C19 35.4404 19.5596 36 20.25 36C20.9404 36 21.5 35.4404 21.5 34.75V20.25ZM27.75 19C28.4404 19 29 19.5596 29 20.25V34.75C29 35.4404 28.4404 36 27.75 36C27.0596 36 26.5 35.4404 26.5 34.75V20.25C26.5 19.5596 27.0596 19 27.75 19Z" fill="currentColor"/></svg></button>';
+        var dragHandle = '<span class="drag-handle" title="Drag to reorder">&#9776;</span>';
+
+        var reqBadge = q.mandatory
+            ? '<span class="badge badge-required" style="cursor:pointer;" onclick="toggleMandatory(\'' + q.metadataId + '\', false)">Required</span>'
+            : '<span class="badge badge-optional" style="cursor:pointer;" onclick="toggleMandatory(\'' + q.metadataId + '\', true)">Optional</span>';
+
+        html += '<tr draggable="true" data-idx="' + idx + '" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">' +
+            '<td>' + dragHandle + ' ' + q.order + '</td>' +
+            '<td>' + pencilIcon + ' ' + escHtml(q.displayName) + '</td>' +
+            '<td>' + typeName + '</td>' +
+            '<td style="font-size:12px;color:#888;">' + q.logicalName + '</td>' +
+            '<td>' + reqBadge + '</td>' +
+            '<td style="text-align:center;">' + actionBtn + deleteBtn + '</td>' +
+            '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+function escHtml(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+// ── Drag & Drop ──────────────────────────────────
+var _dragIdx = null;
+var _savingOrder = false;
+
+function getRow(el) {
+    while (el && el.tagName !== 'TR') el = el.parentElement;
+    return el;
+}
+
+function onDragStart(e) {
+    var row = getRow(e.target);
+    if (!row || row.dataset.idx === undefined) { e.preventDefault(); return; }
+    _dragIdx = parseInt(row.dataset.idx);
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', _dragIdx);
+}
+
+function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var row = getRow(e.target);
+    if (row) row.classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+    var row = getRow(e.target);
+    if (!row) return;
+    var rect = row.getBoundingClientRect();
+    var x = e.clientX, y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+        row.classList.remove('drag-over');
+    }
+}
+
+function onDragEnd(e) {
+    _dragIdx = null;
+    var rows = document.querySelectorAll('tr.dragging, tr.drag-over');
+    for (var i = 0; i < rows.length; i++) {
+        rows[i].classList.remove('dragging');
+        rows[i].classList.remove('drag-over');
+    }
+}
+
+function onDrop(e) {
+    e.preventDefault();
+    var row = getRow(e.target);
+    if (!row) return;
+    row.classList.remove('drag-over');
+    var dropIdx = parseInt(row.dataset.idx);
+    if (_dragIdx === null || isNaN(dropIdx) || _dragIdx === dropIdx) { _dragIdx = null; return; }
+
+    var moved = questions.splice(_dragIdx, 1)[0];
+    questions.splice(dropIdx, 0, moved);
+    _dragIdx = null;
+
+    questions.forEach(function(q, i) { q.order = i + 1; });
+    renderTable();
+    saveAllOrders();
+}
+
+function saveAllOrders() {
+    if (_savingOrder) return;
+    _savingOrder = true;
+    toast('Saving new order...');
+    var chain = Promise.resolve();
+    questions.forEach(function(q) {
+        chain = chain.then(function() {
+            var descJson = JSON.stringify({ survey: true, active: q.active, order: q.order, mandatory: q.mandatory });
+            var odataType = { Boolean: 'BooleanAttributeMetadata', String: 'StringAttributeMetadata', Integer: 'IntegerAttributeMetadata', DateTime: 'DateTimeAttributeMetadata', Decimal: 'DecimalAttributeMetadata', Memo: 'MemoAttributeMetadata' }[q.type] || 'AttributeMetadata';
+            var body = {
+                '@odata.type': 'Microsoft.Dynamics.CRM.' + odataType,
+                Description: {
+                    '@odata.type': 'Microsoft.Dynamics.CRM.Label',
+                    LocalizedLabels: [{ '@odata.type': 'Microsoft.Dynamics.CRM.LocalizedLabel', Label: descJson, LanguageCode: 1033 }]
+                }
+            };
+            return apiCallAsync('PUT',
+                '/api/data/v9.2/' + ENTITY_DEF_PATH + '/Attributes(' + q.metadataId + ')', body)
+            .then(function(xhr) {
+                if (xhr.status !== 204) throw new Error('Failed to update order for ' + q.displayName);
+            });
+        });
+    });
+    chain.then(function() {
+        return apiCallAsync('POST', '/api/data/v9.2/PublishXml', {
+            ParameterXml: '<importexportxml><entities><entity>crd9b_agentsurveyform</entity></entities></importexportxml>'
+        });
+    })
+    .then(function() { _savingOrder = false; toast('Order saved!'); })
+    .catch(function(err) { _savingOrder = false; toast(err.message || 'Failed to save order.', true); });
+}
+
+function openModal() {
+    document.getElementById("txtQuestion").value = "";
+    document.getElementById("selType").value = "Boolean";
+    document.getElementById("chkMandatory").checked = false;
+    document.getElementById("modalOverlay").classList.add("active");
+    document.getElementById("txtQuestion").focus();
+}
+
+function closeModal() {
+    document.getElementById("modalOverlay").classList.remove("active");
+}
+
+function createQuestion() {
+    var questionText = document.getElementById("txtQuestion").value.trim();
+    var dataType = document.getElementById("selType").value;
+    var maxOrder = 0;
+    questions.forEach(function(q) { if (q.order > maxOrder) maxOrder = q.order; });
+    var order = maxOrder + 1;
+
+    if (!questionText) { toast("Please enter a question.", true); return; }
+
+    var btn = document.getElementById("btnCreate");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Creating';
+
+    var sanitized = questionText.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 40);
+    var schemaName = "crd9b_" + sanitized;
+    var mandatory = document.getElementById("chkMandatory").checked;
+    var descJson = JSON.stringify({ survey: true, active: true, order: order, mandatory: mandatory });
+
+    var attrBody = buildAttributeBody(schemaName, questionText, dataType, descJson);
+
+    apiCallAsync("POST",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH + "/Attributes",
+        attrBody)
+    .then(function(xhr) {
+        if (xhr.status !== 204 && xhr.status !== 409) {
+            var errMsg = "Failed to create field (HTTP " + xhr.status + ")";
+            try { errMsg = JSON.parse(xhr.responseText).error.message; } catch(e) {}
+            throw new Error(errMsg);
+        }
+        btn.innerHTML = '<span class="spinner"></span> Publishing...';
+        return apiCallAsync("POST", "/api/data/v9.2/PublishXml", {
+            ParameterXml: "<importexportxml><entities><entity>crd9b_agentsurveyform</entity></entities></importexportxml>"
+        });
+    })
+    .then(function() {
+        toast("Question created successfully!");
+        closeModal();
+        btn.disabled = false;
+        btn.textContent = "Create Question";
+        loadQuestions();
+    })
+    .catch(function(err) {
+        toast(err.message || "Failed to create question.", true);
+        btn.disabled = false;
+        btn.textContent = "Create Question";
+    });
+}
+
+function toggleActive(metadataId, makeActive, btnEl) {
+    var q = questions.find(function(x) { return x.metadataId === metadataId; });
+    if (!q) return;
+
+    // Immediate visual feedback
+    var originalText = btnEl.textContent;
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<span class="spinner"></span>' + (makeActive ? 'Activating' : 'Deactivating');
+
+    var descJson = JSON.stringify({ survey: true, active: makeActive, order: q.order, mandatory: q.mandatory });
+    var odataType = { Boolean: "BooleanAttributeMetadata", String: "StringAttributeMetadata", Integer: "IntegerAttributeMetadata", DateTime: "DateTimeAttributeMetadata", Decimal: "DecimalAttributeMetadata", Memo: "MemoAttributeMetadata" }[q.type] || "AttributeMetadata";
+
+    var body = {
+        "@odata.type": "Microsoft.Dynamics.CRM." + odataType,
+        Description: {
+            "@odata.type": "Microsoft.Dynamics.CRM.Label",
+            LocalizedLabels: [{
+                "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",
+                Label: descJson,
+                LanguageCode: 1033
+            }]
+        }
+    };
+
+    apiCallAsync("PUT",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH + "/Attributes(" + metadataId + ")",
+        body)
+    .then(function(xhr) {
+        if (xhr.status === 204) {
+            btnEl.innerHTML = '<span class="spinner"></span>Publishing';
+            return apiCallAsync("POST", "/api/data/v9.2/PublishXml", {
+                ParameterXml: "<importexportxml><entities><entity>crd9b_agentsurveyform</entity></entities></importexportxml>"
+            });
+        } else {
+            throw new Error("Failed to update (HTTP " + xhr.status + ")");
+        }
+    })
+    .then(function() {
+        toast(makeActive ? "Question activated!" : "Question deactivated!");
+        loadQuestions();
+    })
+    .catch(function(err) {
+        toast(err.message || "Failed to update. Try again.", true);
+        btnEl.disabled = false;
+        btnEl.textContent = originalText;
+    });
+}
+
+function toggleMandatory(metadataId, makeMandatory) {
+    var q = questions.find(function(x) { return x.metadataId === metadataId; });
+    if (!q) return;
+
+    var descJson = JSON.stringify({ survey: true, active: q.active, order: q.order, mandatory: makeMandatory });
+    var odataType = { Boolean: "BooleanAttributeMetadata", String: "StringAttributeMetadata", Integer: "IntegerAttributeMetadata", DateTime: "DateTimeAttributeMetadata", Decimal: "DecimalAttributeMetadata", Memo: "MemoAttributeMetadata" }[q.type] || "AttributeMetadata";
+
+    var body = {
+        "@odata.type": "Microsoft.Dynamics.CRM." + odataType,
+        Description: {
+            "@odata.type": "Microsoft.Dynamics.CRM.Label",
+            LocalizedLabels: [{
+                "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",
+                Label: descJson,
+                LanguageCode: 1033
+            }]
+        }
+    };
+
+    toast(makeMandatory ? 'Setting as required...' : 'Setting as optional...');
+
+    apiCallAsync("PUT",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH + "/Attributes(" + metadataId + ")",
+        body)
+    .then(function(xhr) {
+        if (xhr.status === 204) {
+            return apiCallAsync("POST", "/api/data/v9.2/PublishXml", {
+                ParameterXml: "<importexportxml><entities><entity>crd9b_agentsurveyform</entity></entities></importexportxml>"
+            });
+        } else {
+            throw new Error("Failed to update (HTTP " + xhr.status + ")");
+        }
+    })
+    .then(function() {
+        toast(makeMandatory ? 'Question marked as required!' : 'Question marked as optional!');
+        loadQuestions();
+    })
+    .catch(function(err) {
+        toast(err.message || 'Failed to update.', true);
+    });
+}
+
+function buildAttributeBody(schemaName, label, dataType, descriptionJson) {
+    var displayName = { "@odata.type": "Microsoft.Dynamics.CRM.Label", LocalizedLabels: [{ "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel", Label: label, LanguageCode: 1033 }] };
+    var description = { "@odata.type": "Microsoft.Dynamics.CRM.Label", LocalizedLabels: [{ "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel", Label: descriptionJson, LanguageCode: 1033 }] };
+
+    switch (dataType) {
+        case "Boolean":
+            return {
+                "@odata.type": "Microsoft.Dynamics.CRM.BooleanAttributeMetadata",
+                SchemaName: schemaName, DisplayName: displayName, Description: description,
+                RequiredLevel: { Value: "None" },
+                OptionSet: {
+                    TrueOption: { Value: 1, Label: { "@odata.type": "Microsoft.Dynamics.CRM.Label", LocalizedLabels: [{ "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel", Label: "Yes", LanguageCode: 1033 }] } },
+                    FalseOption: { Value: 0, Label: { "@odata.type": "Microsoft.Dynamics.CRM.Label", LocalizedLabels: [{ "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel", Label: "No", LanguageCode: 1033 }] } }
+                }
+            };
+        case "String":
+            return {
+                "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+                SchemaName: schemaName, DisplayName: displayName, Description: description,
+                RequiredLevel: { Value: "None" }, MaxLength: 500, FormatName: { Value: "Text" }
+            };
+        case "Integer":
+            return {
+                "@odata.type": "Microsoft.Dynamics.CRM.IntegerAttributeMetadata",
+                SchemaName: schemaName, DisplayName: displayName, Description: description,
+                RequiredLevel: { Value: "None" }, MinValue: -2147483648, MaxValue: 2147483647
+            };
+        case "DateTime":
+            return {
+                "@odata.type": "Microsoft.Dynamics.CRM.DateTimeAttributeMetadata",
+                SchemaName: schemaName, DisplayName: displayName, Description: description,
+                RequiredLevel: { Value: "None" }, Format: "DateOnly"
+            };
+        case "StringEmail":
+            return {
+                "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+                SchemaName: schemaName, DisplayName: displayName, Description: description,
+                RequiredLevel: { Value: "None" }, MaxLength: 320, FormatName: { Value: "Email" }
+            };
+        case "Decimal":
+            return {
+                "@odata.type": "Microsoft.Dynamics.CRM.DecimalAttributeMetadata",
+                SchemaName: schemaName, DisplayName: displayName, Description: description,
+                RequiredLevel: { Value: "None" }, MinValue: -100000000000, MaxValue: 100000000000, Precision: 2
+            };
+        case "Memo":
+            return {
+                "@odata.type": "Microsoft.Dynamics.CRM.MemoAttributeMetadata",
+                SchemaName: schemaName, DisplayName: displayName, Description: description,
+                RequiredLevel: { Value: "None" }, MaxLength: 2000
+            };
+    }
+}
+
+function openEditModal(metadataId) {
+    var q = questions.find(function(x) { return x.metadataId === metadataId; });
+    if (!q) return;
+    document.getElementById("editMetadataId").value = metadataId;
+    var ta = document.getElementById("editTxtQuestion");
+    ta.value = q.displayName;
+    ta.style.height = 'auto';
+    document.getElementById("editChkMandatory").checked = q.mandatory;
+    document.getElementById("btnSaveEdit").disabled = false;
+    document.getElementById("btnSaveEdit").textContent = "Save Changes";
+    document.getElementById("editModalOverlay").classList.add("active");
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.focus();
+}
+
+function closeEditModal() {
+    document.getElementById("editModalOverlay").classList.remove("active");
+}
+
+function saveEdit() {
+    var metadataId = document.getElementById("editMetadataId").value;
+    var newLabel = document.getElementById("editTxtQuestion").value.trim();
+    var newOrder = q.order;
+    if (!newLabel) { toast("Question text cannot be empty.", true); return; }
+
+    var q = questions.find(function(x) { return x.metadataId === metadataId; });
+    if (!q) return;
+
+    var btn = document.getElementById("btnSaveEdit");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Saving';
+
+    var newMandatory = document.getElementById("editChkMandatory").checked;
+    var descJson = JSON.stringify({ survey: true, active: q.active, order: newOrder, mandatory: newMandatory });
+    var odataType = { Boolean: "BooleanAttributeMetadata", String: "StringAttributeMetadata", Integer: "IntegerAttributeMetadata", DateTime: "DateTimeAttributeMetadata", Decimal: "DecimalAttributeMetadata", Memo: "MemoAttributeMetadata" }[q.type] || "AttributeMetadata";
+
+    var body = {
+        "@odata.type": "Microsoft.Dynamics.CRM." + odataType,
+        "DisplayName": {
+            "@odata.type": "Microsoft.Dynamics.CRM.Label",
+            "LocalizedLabels": [{
+                "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",
+                "Label": newLabel,
+                "LanguageCode": 1033
+            }]
+        },
+        "Description": {
+            "@odata.type": "Microsoft.Dynamics.CRM.Label",
+            "LocalizedLabels": [{
+                "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",
+                "Label": descJson,
+                "LanguageCode": 1033
+            }]
+        }
+    };
+
+    apiCallAsync("PUT",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH + "/Attributes(" + metadataId + ")",
+        body)
+    .then(function(xhr) {
+        if (xhr.status === 204) {
+            btn.innerHTML = '<span class="spinner"></span>Publishing';
+            return apiCallAsync("POST", "/api/data/v9.2/PublishXml", {
+                ParameterXml: "<importexportxml><entities><entity>crd9b_agentsurveyform</entity></entities></importexportxml>"
+            });
+        } else {
+            var errMsg = "Failed to update (HTTP " + xhr.status + ")";
+            try { errMsg = JSON.parse(xhr.responseText).error.message; } catch(e) {}
+            throw new Error(errMsg);
+        }
+    })
+    .then(function() {
+        toast("Question updated successfully!");
+        closeEditModal();
+        btn.disabled = false;
+        btn.textContent = "Save Changes";
+        loadQuestions();
+    })
+    .catch(function(err) {
+        toast(err.message || "Failed to update question.", true);
+        btn.disabled = false;
+        btn.textContent = "Save Changes";
+    });
+}
+
+function deleteQuestion(metadataId, btnEl) {
+    var q = questions.find(function(x) { return x.metadataId === metadataId; });
+    if (!q) return;
+
+    document.getElementById('deleteMetadataId').value = metadataId;
+    document.getElementById('deleteModalMsg').textContent = 'Are you sure you want to permanently delete "' + q.displayName + '"? This will delete the column and all its data from the Agent Survey Form table.';
+    document.getElementById('btnConfirmDelete').disabled = false;
+    document.getElementById('btnConfirmDelete').textContent = 'Delete';
+    document.getElementById('deleteModalOverlay').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModalOverlay').classList.remove('active');
+}
+
+function confirmDelete() {
+    var metadataId = document.getElementById('deleteMetadataId').value;
+    var q = questions.find(function(x) { return x.metadataId === metadataId; });
+    if (!q) return;
+
+    var btn = document.getElementById('btnConfirmDelete');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Deleting';
+
+    apiCallAsync("DELETE",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH + "/Attributes(" + metadataId + ")",
+        null)
+    .then(function(xhr) {
+        if (xhr.status === 204) {
+            btn.innerHTML = '<span class="spinner"></span>Publishing';
+            return apiCallAsync("POST", "/api/data/v9.2/PublishXml", {
+                ParameterXml: "<importexportxml><entities><entity>crd9b_agentsurveyform</entity></entities></importexportxml>"
+            });
+        } else {
+            var errMsg = "Failed to delete (HTTP " + xhr.status + ")";
+            try { errMsg = JSON.parse(xhr.responseText).error.message; } catch(e) {}
+            throw new Error(errMsg);
+        }
+    })
+    .then(function() {
+        closeDeleteModal();
+        toast('Question "' + q.displayName + '" deleted.');
+        loadQuestions();
+    })
+    .catch(function(err) {
+        toast(err.message || "Failed to delete. Try again.", true);
+        btn.disabled = false;
+        btn.textContent = "Delete";
+    });
+}
+
+function toast(msg, isError) {
+    var el = document.createElement("div");
+    el.className = "toast " + (isError ? "toast-error" : "toast-success");
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function() { el.remove(); }, 4000);
+}
+
+window.onload = init;
+
+function highlightActiveSwatch() {
+    var swatches = document.querySelectorAll('.color-swatch');
+    var matched = false;
+    swatches.forEach(function(s) {
+        if (s.dataset.color && s.dataset.color.toLowerCase() === currentThemeColor.toLowerCase()) {
+            s.classList.add('active');
+            matched = true;
+        } else {
+            s.classList.remove('active');
+        }
+    });
+    var picker = document.getElementById('customColorPicker');
+    if (!matched) {
+        picker.value = currentThemeColor;
+        picker.style.borderColor = currentThemeColor;
+        picker.style.borderStyle = 'solid';
+    } else {
+        picker.style.borderColor = '#ccc';
+        picker.style.borderStyle = 'dashed';
+    }
+}
+
+function selectThemeColor(color) {
+    currentThemeColor = color;
+    highlightActiveSwatch();
+    saveThemeColor(color);
+}
+
+function saveThemeColor(color) {
+    var savingEl = document.getElementById('themeSaving');
+    savingEl.style.display = 'inline-flex';
+
+    var descJson = JSON.stringify({ surveyEnabled: surveyGlobalEnabled, themeColor: color });
+
+    apiCallAsync("PUT",
+        "/api/data/v9.2/" + ENTITY_DEF_PATH,
+        {
+            "Description": {
+                "@odata.type": "Microsoft.Dynamics.CRM.Label",
+                "LocalizedLabels": [{
+                    "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",
+                    "Label": descJson,
+                    "LanguageCode": 1033
+                }]
+            }
+        })
+    .then(function(xhr) {
+        if (xhr.status === 204 || xhr.status === 200) {
+            return apiCallAsync("POST", "/api/data/v9.2/PublishXml", {
+                ParameterXml: "<importexportxml><entities><entity>crd9b_agentsurveyform</entity></entities></importexportxml>"
+            });
+        } else {
+            throw new Error("Failed");
+        }
+    })
+    .then(function() {
+        savingEl.style.display = 'none';
+        toast("Theme color updated!");
+    })
+    .catch(function(err) {
+        savingEl.style.display = 'none';
+        var msg = "Failed to save theme color.";
+        if (err && err.responseText) { try { msg = JSON.parse(err.responseText).error.message; } catch(e) {} }
+        else if (err && err.message) { msg = err.message; }
+        toast(msg, true);
+        console.error("Theme save error:", err);
+    });
+}
+
+function showPreview() {
+    var iframe = document.getElementById('previewIframe');
+    iframe.src = BASE_URL + '/WebResources/new_AgentSurveyForm?data=preview';
+    document.getElementById('previewOverlay').classList.add('active');
+}
+
+function closePreview() {
+    document.getElementById('previewOverlay').classList.remove('active');
+    document.getElementById('previewIframe').src = '';
+}
+
+// ── Dashboard ──────────────────────────────────────────────
+var dashRecords = [];
+var dashFiltered = [];
+var DASH_COLORS = ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a','#fee140','#30cfd0','#a18cd1'];
+
+function loadD3(cb) {
+    if (window.d3) { cb(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://d3js.org/d3.v7.min.js';
+    s.onload = cb;
+    s.onerror = function() { toast('Failed to load charting library. Check internet connection.', true); };
+    document.head.appendChild(s);
+}
+
+function openDashboard() {
+    document.getElementById('dashOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    loadD3(function() { loadDashboardData(); });
+}
+
+function closeDashboard() {
+    document.getElementById('dashOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+    var tt = document.querySelector('.d3-tooltip');
+    if (tt) tt.style.display = 'none';
+}
+
+function loadDashboardData() {
+    document.getElementById('dashChartsArea').innerHTML = '';
+    document.getElementById('kpiTotal').textContent = '-';
+    document.getElementById('kpiWeek').textContent = '-';
+    document.getElementById('kpiAvg').textContent = '-';
+    document.getElementById('kpiQuestions').textContent = '-';
+    document.getElementById('dashLoadingMsg').style.display = 'block';
+    if (questions.length === 0) loadQuestions();
+    var fields = ['createdon','_ownerid_value','crd9b_newconversationid'];
+    questions.forEach(function(q) { fields.push(q.logicalName); });
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', BASE_URL + '/api/data/v9.2/crd9b_agentsurveyforms?$select=' + fields.join(',') + '&$orderby=createdon desc&$top=5000', true);
+    xhr.setRequestHeader('Content-Type','application/json');
+    xhr.setRequestHeader('OData-MaxVersion','4.0');
+    xhr.setRequestHeader('OData-Version','4.0');
+    xhr.setRequestHeader('Prefer','odata.include-annotations="*"');
+    xhr.onload = function() {
+        document.getElementById('dashLoadingMsg').style.display = 'none';
+        if (xhr.status === 200) {
+            dashRecords = (JSON.parse(xhr.responseText).value || []);
+            populateDashFilters();
+            applyDashFilters();
+        } else {
+            document.getElementById('dashChartsArea').innerHTML = '<div class="dash-no-data">Error loading survey data.</div>';
+        }
+    };
+    xhr.onerror = function() {
+        document.getElementById('dashLoadingMsg').style.display = 'none';
+        document.getElementById('dashChartsArea').innerHTML = '<div class="dash-no-data">Network error.</div>';
+    };
+    xhr.send();
+}
+
+function populateDashFilters() {
+    _allAgents = {};
+    dashRecords.forEach(function(r) {
+        var id = r['_ownerid_value'];
+        var nm = r['_ownerid_value@OData.Community.Display.V1.FormattedValue'] || 'Unknown';
+        if (id) _allAgents[id] = nm;
+    });
+    renderAgentDropdown();
+    _allQuestions = {};
+    questions.forEach(function(q) {
+        if (_showInactive || q.active) _allQuestions[q.logicalName] = q.displayName;
+    });
+    renderQuestionDropdown();
+}
+
+// ── Multi-select Agent Lookup ──
+var _allAgents = {};
+var _selectedAgents = [];
+
+function renderAgentDropdown(filter) {
+    var dd = document.getElementById('agentDropdown');
+    var search = (filter || '').toLowerCase();
+    var entries = Object.keys(_allAgents).map(function(id) { return { id: id, name: _allAgents[id] }; })
+        .filter(function(a) { return !search || a.name.toLowerCase().indexOf(search) >= 0; })
+        .sort(function(a,b) { return a.name.localeCompare(b.name); });
+    if (!entries.length) {
+        dd.innerHTML = '<div class="ms-dropdown-empty">No agents found</div>';
+        return;
+    }
+    dd.innerHTML = entries.map(function(a) {
+        var sel = _selectedAgents.indexOf(a.id) >= 0;
+        return '<div class="ms-dropdown-item' + (sel ? ' selected' : '') + '" data-id="' + a.id + '" onclick="toggleAgentSelect(\'' + a.id + '\')">' +
+            '<span class="ms-check">' + (sel ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="#fff"/></svg>' : '') + '</span>' +
+            escHtml(a.name) + '</div>';
+    }).join('');
+}
+
+function showAgentDropdown() {
+    filterAgentDropdown();
+    document.getElementById('agentDropdown').classList.add('open');
+}
+
+function filterAgentDropdown() {
+    var val = document.getElementById('agentLookupInput').value;
+    renderAgentDropdown(val);
+    document.getElementById('agentDropdown').classList.add('open');
+}
+
+function toggleAgentSelect(id) {
+    var idx = _selectedAgents.indexOf(id);
+    if (idx >= 0) _selectedAgents.splice(idx, 1);
+    else _selectedAgents.push(id);
+    renderChips('agentLookupBox', 'agentLookupInput', _selectedAgents, _allAgents, removeAgentChip, 'Search agents...');
+    renderAgentDropdown(document.getElementById('agentLookupInput').value);
+    applyDashFilters();
+}
+
+function removeAgentChip(id) {
+    var idx = _selectedAgents.indexOf(id);
+    if (idx >= 0) _selectedAgents.splice(idx, 1);
+    renderChips('agentLookupBox', 'agentLookupInput', _selectedAgents, _allAgents, removeAgentChip, 'Search agents...');
+    renderAgentDropdown(document.getElementById('agentLookupInput').value);
+    applyDashFilters();
+}
+
+// ── Multi-select Question Lookup ──
+var _allQuestions = {};
+var _selectedQuestions = [];
+var _showInactive = false;
+
+function renderQuestionDropdown(filter) {
+    var dd = document.getElementById('questionDropdown');
+    var search = (filter || '').toLowerCase();
+    var entries = Object.keys(_allQuestions).map(function(k) { return { id: k, name: _allQuestions[k] }; })
+        .filter(function(a) { return !search || a.name.toLowerCase().indexOf(search) >= 0; })
+        .sort(function(a,b) { return a.name.localeCompare(b.name); });
+    if (!entries.length) {
+        dd.innerHTML = '<div class="ms-dropdown-empty">No questions found</div>';
+        return;
+    }
+    dd.innerHTML = entries.map(function(a) {
+        var sel = _selectedQuestions.indexOf(a.id) >= 0;
+        return '<div class="ms-dropdown-item' + (sel ? ' selected' : '') + '" data-id="' + a.id + '" onclick="toggleQuestionSelect(\'' + a.id + '\')">' +
+            '<span class="ms-check">' + (sel ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="#fff"/></svg>' : '') + '</span>' +
+            escHtml(a.name) + '</div>';
+    }).join('');
+}
+
+function showQuestionDropdown() {
+    filterQuestionDropdown();
+    document.getElementById('questionDropdown').classList.add('open');
+}
+
+function filterQuestionDropdown() {
+    var val = document.getElementById('questionLookupInput').value;
+    renderQuestionDropdown(val);
+    document.getElementById('questionDropdown').classList.add('open');
+}
+
+function toggleQuestionSelect(id) {
+    var idx = _selectedQuestions.indexOf(id);
+    if (idx >= 0) _selectedQuestions.splice(idx, 1);
+    else _selectedQuestions.push(id);
+    renderChips('questionLookupBox', 'questionLookupInput', _selectedQuestions, _allQuestions, removeQuestionChip, 'Search questions...');
+    renderQuestionDropdown(document.getElementById('questionLookupInput').value);
+    applyDashFilters();
+}
+
+function removeQuestionChip(id) {
+    var idx = _selectedQuestions.indexOf(id);
+    if (idx >= 0) _selectedQuestions.splice(idx, 1);
+    renderChips('questionLookupBox', 'questionLookupInput', _selectedQuestions, _allQuestions, removeQuestionChip, 'Search questions...');
+    renderQuestionDropdown(document.getElementById('questionLookupInput').value);
+    applyDashFilters();
+}
+
+// ── Shared chip renderer ──
+function renderChips(boxId, inputId, selectedArr, dataMap, removeFn, placeholder) {
+    var box = document.getElementById(boxId);
+    box.querySelectorAll('.ms-chip').forEach(function(c) { c.remove(); });
+    var input = document.getElementById(inputId);
+    selectedArr.forEach(function(id) {
+        var chip = document.createElement('span');
+        chip.className = 'ms-chip';
+        var label = escHtml(dataMap[id] || id);
+        chip.innerHTML = label + '<button class="ms-chip-x" onclick="event.stopPropagation();">&times;</button>';
+        chip.querySelector('.ms-chip-x').addEventListener('click', function() { removeFn(id); });
+        box.insertBefore(chip, input);
+    });
+    input.placeholder = selectedArr.length ? '' : placeholder;
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', function(e) {
+    var agentLookup = document.getElementById('agentLookup');
+    if (agentLookup && !agentLookup.contains(e.target)) {
+        document.getElementById('agentDropdown').classList.remove('open');
+    }
+    var questionLookup = document.getElementById('questionLookup');
+    if (questionLookup && !questionLookup.contains(e.target)) {
+        document.getElementById('questionDropdown').classList.remove('open');
+    }
+});
+
+function applyDashFilters() {
+    var dateFrom = document.getElementById('dashFilterFrom').value;
+    var dateTo = document.getElementById('dashFilterTo').value;
+    dashFiltered = dashRecords.filter(function(r) {
+        if (_selectedAgents.length && _selectedAgents.indexOf(r['_ownerid_value']) < 0) return false;
+        if (dateFrom && r.createdon < dateFrom) return false;
+        if (dateTo && r.createdon > dateTo + 'T23:59:59Z') return false;
+        return true;
+    });
+    renderDashboard(_selectedQuestions);
+}
+
+function toggleShowInactive() {
+    _showInactive = document.getElementById('dashShowInactive').checked;
+    rebuildQuestionList();
+    applyDashFilters();
+}
+
+function rebuildQuestionList() {
+    _allQuestions = {};
+    questions.forEach(function(q) {
+        if (_showInactive || q.active) _allQuestions[q.logicalName] = q.displayName;
+    });
+    // Remove selected questions that are no longer visible
+    _selectedQuestions = _selectedQuestions.filter(function(id) { return _allQuestions.hasOwnProperty(id); });
+    renderChips('questionLookupBox', 'questionLookupInput', _selectedQuestions, _allQuestions, removeQuestionChip, 'Search questions...');
+    renderQuestionDropdown();
+}
+
+function resetDashFilters() {
+    _selectedAgents = [];
+    renderChips('agentLookupBox', 'agentLookupInput', _selectedAgents, _allAgents, removeAgentChip, 'Search agents...');
+    document.getElementById('agentLookupInput').value = '';
+    _selectedQuestions = [];
+    renderChips('questionLookupBox', 'questionLookupInput', _selectedQuestions, _allQuestions, removeQuestionChip, 'Search questions...');
+    document.getElementById('questionLookupInput').value = '';
+    document.getElementById('dashFilterFrom').value = '';
+    document.getElementById('dashFilterTo').value = '';
+    _showInactive = false;
+    document.getElementById('dashShowInactive').checked = false;
+    rebuildQuestionList();
+    applyDashFilters();
+}
+
+function renderDashboard(focusQs) {
+    var total = dashFiltered.length;
+    var now = new Date();
+    var weekAgo = new Date(now - 7*24*3600000);
+    var thisWeek = dashFiltered.filter(function(r) { return new Date(r.createdon) >= weekAgo; }).length;
+    var dates = {};
+    dashFiltered.forEach(function(r) { var d = r.createdon.substring(0,10); dates[d] = (dates[d]||0)+1; });
+    var numDays = Object.keys(dates).length;
+    document.getElementById('kpiTotal').textContent = total;
+    document.getElementById('kpiWeek').textContent = thisWeek;
+    document.getElementById('kpiAvg').textContent = numDays ? (total/numDays).toFixed(1) : '0';
+    document.getElementById('kpiQuestions').textContent = questions.filter(function(q){return q.active;}).length;
+    var area = document.getElementById('dashChartsArea');
+    area.innerHTML = '';
+    var agentCard = mkCard('Responses by Agent');
+    area.appendChild(agentCard.el);
+    var visibleQs = _showInactive ? questions : questions.filter(function(q) { return q.active; });
+    var boolQs = visibleQs.filter(function(q) { return q.type === 'Boolean'; });
+    var donutCard = null;
+    var focusCards = [];
+    if (focusQs && focusQs.length) {
+        focusQs.forEach(function(fqName) {
+            var fq = questions.find(function(q) { return q.logicalName === fqName; });
+            if (fq) {
+                var fc = mkCard((fq.type === 'Boolean' ? 'Toggle Breakdown' : 'Response Summary') + ': ' + fq.displayName);
+                area.appendChild(fc.el);
+                focusCards.push({ card: fc, q: fq });
+            }
+        });
+    } else {
+        if (boolQs.length) { donutCard = mkCard('Questions Breakdown'); area.appendChild(donutCard.el); }
+    }
+    requestAnimationFrame(function() {
+        drawAgentChart(agentCard.body, dashFiltered);
+        if (focusCards.length) {
+            focusCards.forEach(function(fc) {
+                if (fc.q.type === 'Boolean') drawSingleDonut(fc.card.body, fc.q, dashFiltered);
+                else drawFieldStats(fc.card.body, fc.q, dashFiltered);
+            });
+        } else {
+            if (donutCard && boolQs.length) drawDonutSet(donutCard.body, boolQs, dashFiltered);
+        }
+    });
+    drawResponseTable();
+}
+
+var _tblSort = { col: 'createdon', dir: 'desc' };
+
+function drawResponseTable() {
+    var container = document.getElementById('dashResponseTable');
+    if (!container) return;
+    var cols = [
+        { key: '_agent_', label: 'Agent', getValue: function(r) { return r['_ownerid_value@OData.Community.Display.V1.FormattedValue'] || 'Unknown'; } },
+        { key: 'createdon', label: 'Submitted', getValue: function(r) { var d = r.createdon; return d ? d.substring(0,10) + ' ' + d.substring(11,16) : ''; } }
+    ];
+    var tblQs = _showInactive ? questions : questions.filter(function(q) { return q.active; });
+    tblQs.forEach(function(q) {
+        cols.push({ key: q.logicalName, label: q.displayName, type: q.type, getValue: function(r) {
+            var v = r[q.logicalName];
+            if (v == null || v === '') return '';
+            if (q.type === 'Boolean') return v === true || v === 'true' || v === 1 ? 'Yes' : 'No';
+            return String(v);
+        }});
+    });
+    var rows = dashFiltered.map(function(r) {
+        var row = { _raw: r };
+        cols.forEach(function(c) { row[c.key] = c.getValue(r); });
+        return row;
+    });
+    var sk = _tblSort.col;
+    var sd = _tblSort.dir === 'asc' ? 1 : -1;
+    rows.sort(function(a,b) {
+        var va = (a[sk]||'').toLowerCase(), vb = (b[sk]||'').toLowerCase();
+        if (va < vb) return -sd;
+        if (va > vb) return sd;
+        return 0;
+    });
+    var html = '<div class="resp-table-wrap">';
+    html += '<div class="resp-table-header"><span class="resp-table-title">Survey Responses</span><div style="display:flex;gap:8px;align-items:center;"><button class="resp-expand-btn" onclick="toggleRespExpand()" id="respExpandBtn">&#x21F2; Expand</button><span class="resp-table-count">' + rows.length + ' record' + (rows.length !== 1 ? 's' : '') + '</span></div></div>';
+    html += '<div class="resp-table-scroll"><table class="resp-table"><thead><tr>';
+    cols.forEach(function(c) {
+        var isSorted = _tblSort.col === c.key;
+        var arrow = isSorted ? (_tblSort.dir === 'asc' ? '&#9650;' : '&#9660;') : '&#9650;';
+        html += '<th class="' + (isSorted ? 'sorted' : '') + '" onclick="sortRespTable(\'' + c.key + '\')">' + escHtml(c.label) + '<span class="sort-arrow">' + arrow + '</span>';
+        html += '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    if (!rows.length) {
+        html += '<tr><td colspan="' + cols.length + '" style="text-align:center;color:#888;padding:24px;">No records match the filters.</td></tr>';
+    } else {
+        rows.forEach(function(row) {
+            html += '<tr>';
+            cols.forEach(function(c) {
+                var v = row[c.key] || '';
+                var cls = '';
+                if (c.type === 'Boolean') cls = v === 'Yes' ? ' class="bool-yes"' : (v === 'No' ? ' class="bool-no"' : '');
+                html += '<td' + cls + ' title="' + escHtml(v) + '">' + escHtml(v) + '</td>';
+            });
+            html += '</tr>';
+        });
+    }
+    html += '</tbody></table></div></div>';
+    container.innerHTML = html;
+}
+
+function sortRespTable(col) {
+    if (_tblSort.col === col) _tblSort.dir = _tblSort.dir === 'asc' ? 'desc' : 'asc';
+    else { _tblSort.col = col; _tblSort.dir = 'asc'; }
+    drawResponseTable();
+}
+
+var _respExpanded = false;
+function toggleRespExpand() {
+    _respExpanded = !_respExpanded;
+    var scroll = document.querySelector('.resp-table-scroll');
+    var btn = document.getElementById('respExpandBtn');
+    if (scroll) {
+        if (_respExpanded) { scroll.classList.add('expanded'); btn.innerHTML = '&#x21F1; Compact'; }
+        else { scroll.classList.remove('expanded'); btn.innerHTML = '&#x21F2; Expand'; }
+    }
+}
+
+function mkCard(title, cls) {
+    var c = document.createElement('div');
+    c.className = 'dash-chart-card' + (cls ? ' ' + cls : '');
+    var h = document.createElement('div');
+    h.className = 'dash-chart-title';
+    h.textContent = title;
+    c.appendChild(h);
+    var b = document.createElement('div');
+    c.appendChild(b);
+    return { el: c, body: b };
+}
+
+function getTooltip() {
+    var t = document.querySelector('.d3-tooltip');
+    if (!t) { t = document.createElement('div'); t.className = 'd3-tooltip'; t.style.display = 'none'; document.body.appendChild(t); }
+    return d3.select(t);
+}
+
+// ── D3: Agent Horizontal Bar Chart ──
+function drawAgentChart(container, records) {
+    var agents = {};
+    records.forEach(function(r) {
+        var nm = r['_ownerid_value@OData.Community.Display.V1.FormattedValue'] || 'Unknown';
+        agents[nm] = (agents[nm]||0)+1;
+    });
+    var data = Object.keys(agents).map(function(n){return{name:n,count:agents[n]};}).sort(function(a,b){return b.count-a.count;}).slice(0,10);
+    if (!data.length) { container.innerHTML = '<div class="dash-no-data">No agent data.</div>'; return; }
+    var longestLabel = Math.max.apply(null, data.map(function(d){ return d.name.length; }));
+    var margin = {top:8,right:50,bottom:8,left:Math.min(150, longestLabel*7)+10};
+    var barH = 30, gap = 6;
+    var W = Math.max(container.clientWidth||400,280);
+    var H = data.length*(barH+gap)+margin.top+margin.bottom;
+    var w = W-margin.left-margin.right;
+    var svg = d3.select(container).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('width','100%').style('overflow','visible')
+        .append('g').attr('transform','translate('+margin.left+','+margin.top+')');
+    var x = d3.scaleLinear().domain([0,d3.max(data,function(d){return d.count;})*1.15]).range([0,w]);
+    var yScale = d3.scaleBand().domain(data.map(function(d){return d.name;})).range([0,data.length*(barH+gap)]).padding(0.15);
+    var tip = getTooltip();
+    svg.selectAll('.bar').data(data).enter().append('rect')
+        .attr('x',0).attr('y',function(d){return yScale(d.name);}).attr('height',yScale.bandwidth()).attr('rx',4)
+        .attr('fill',function(d,i){return DASH_COLORS[i%DASH_COLORS.length];})
+        .style('cursor','pointer')
+        .attr('width',0).transition().duration(800).ease(d3.easeCubicOut)
+        .attr('width',function(d){return x(d.count);});
+    svg.selectAll('.bar-hover').data(data).enter().append('rect')
+        .attr('x',0).attr('y',function(d){return yScale(d.name);}).attr('width',w).attr('height',yScale.bandwidth())
+        .attr('fill','transparent').style('cursor','pointer')
+        .on('mouseover',function(ev,d){
+            tip.style('display','block').html('<strong>'+escHtml(d.name)+'</strong><br/>'+d.count+' response'+(d.count!==1?'s':''))
+                .style('left',(ev.clientX+14)+'px').style('top',(ev.clientY-10)+'px');
+        })
+        .on('mouseout',function(){tip.style('display','none');});
+    svg.selectAll('.lbl').data(data).enter().append('text')
+        .attr('x',-8).attr('y',function(d){return yScale(d.name)+yScale.bandwidth()/2;})
+        .attr('dy','0.35em').attr('text-anchor','end').style('font-size','11px').style('fill','#444')
+        .text(function(d){return d.name.length>22?d.name.substring(0,20)+'...':d.name;});
+    svg.selectAll('.cnt').data(data).enter().append('text')
+        .attr('x',function(d){return x(d.count)+8;}).attr('y',function(d){return yScale(d.name)+yScale.bandwidth()/2;})
+        .attr('dy','0.35em').style('font-size','12px').style('font-weight','600').style('fill','#444')
+        .text(function(d){return d.count;});
+}
+
+// ── D3: Donut Charts for Boolean Questions ──
+function drawDonutSet(container, boolQs, records) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:20px;padding:8px 0;';
+    container.appendChild(wrap);
+    boolQs.forEach(function(q) {
+        var div = document.createElement('div');
+        div.style.cssText = 'display:flex;flex-direction:column;align-items:center;text-align:center;';
+        wrap.appendChild(div);
+        drawSingleDonut(div, q, records);
+    });
+}
+
+function drawSingleDonut(container, q, records) {
+    var yes=0, no=0;
+    records.forEach(function(r) { if(r[q.logicalName]===true) yes++; else if(r[q.logicalName]===false) no++; });
+    var total = yes+no;
+    var noData = !total;
+    var size=120, radius=size/2, inner=radius*0.62;
+    var svg = d3.select(container).append('svg').attr('width',size).attr('height',size)
+        .style('display','block').style('margin','0 auto')
+        .append('g').attr('transform','translate('+radius+','+radius+')');
+    var pie = d3.pie().value(function(d){return d.value;}).sort(null).padAngle(0.03);
+    var arc = d3.arc().innerRadius(inner).outerRadius(radius).cornerRadius(3);
+    if (noData) {
+        svg.append('path')
+            .attr('d', d3.arc().innerRadius(inner).outerRadius(radius)({startAngle:0,endAngle:2*Math.PI}))
+            .attr('fill','#e0e0e0');
+        svg.append('text').attr('text-anchor','middle').attr('dy','0.35em')
+            .style('font-size','11px').style('fill','#9e9e9e')
+            .text('No data');
+    } else {
+        var dd = [{label:'Yes',value:yes,color:'#10b981'},{label:'No',value:no,color:'#f43f5e'}];
+        svg.selectAll('path').data(pie(dd)).enter().append('path')
+            .attr('fill',function(d){return d.data.color;})
+            .transition().duration(900)
+            .attrTween('d',function(d){var i=d3.interpolate({startAngle:0,endAngle:0},d);return function(t){return arc(i(t));};});
+    }
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:11px;color:' + (noData ? '#9e9e9e' : '#616161') + ';margin-top:8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:auto;margin-right:auto;text-align:center;';
+    lbl.textContent = q.displayName;
+    lbl.title = q.displayName;
+    container.appendChild(lbl);
+    if (noData) {
+        var leg = document.createElement('div');
+        leg.style.cssText = 'display:flex;gap:14px;justify-content:center;margin-top:4px;font-size:11px;color:#bbb;';
+        leg.innerHTML = '<span>No responses yet</span>';
+        container.appendChild(leg);
+    } else {
+        var yesPct = Math.round((yes/total)*100);
+        var noPct = Math.round((no/total)*100);
+        var yesSpan = '<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;"></span>Yes '+yesPct+'%</span>';
+        var noSpan = '<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#f43f5e;display:inline-block;"></span>No '+noPct+'%</span>';
+        var leg = document.createElement('div');
+        leg.style.cssText = 'display:flex;gap:14px;justify-content:center;margin-top:4px;font-size:11px;color:#444;';
+        leg.innerHTML = yesPct >= noPct ? yesSpan + noSpan : noSpan + yesSpan;
+        container.appendChild(leg);
+    }
+}
+
+// ── Field Stats (numeric) ──
+function drawFieldStats(container, q, records) {
+    var vals = [];
+    records.forEach(function(r) { if (r[q.logicalName] != null && r[q.logicalName] !== '') vals.push(r[q.logicalName]); });
+    var html = '<div style="font-size:13px;color:#616161;margin-bottom:12px;">'+vals.length+' responses</div>';
+    if ((q.type==='Integer'||q.type==='Decimal') && vals.length) {
+        var nums = vals.map(Number).filter(function(n){return !isNaN(n);});
+        if (nums.length) {
+            var sum = nums.reduce(function(a,b){return a+b;},0);
+            html += '<div style="display:flex;gap:32px;flex-wrap:wrap;">';
+            html += '<div><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px;">Average</div><div style="font-size:28px;font-weight:700;color:#667eea;">'+(sum/nums.length).toFixed(1)+'</div></div>';
+            html += '<div><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px;">Min</div><div style="font-size:28px;font-weight:700;">'+Math.min.apply(null,nums)+'</div></div>';
+            html += '<div><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px;">Max</div><div style="font-size:28px;font-weight:700;">'+Math.max.apply(null,nums)+'</div></div>';
+            html += '</div>';
+        }
+    }
+    container.innerHTML = html;
+}
+
+</script>
+<div class="footer-credit">Created by <a href="https://www.linkedin.com/in/mauriciooliveira/" target="_blank">Mauricio Oliveira</a> - GBB Contact Center</div>
+</body>
+</html>
